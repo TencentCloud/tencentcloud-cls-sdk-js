@@ -1,0 +1,40 @@
+{
+  "name": "tencentcloud-cls-sdk-js",
+  "version": "1.0.0",
+  "description": "TencentCloud CLS Javascript SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --reporter spec --require ts-node/register test/**/*.test.ts",
+    "build:commonjs": "rimraf lib && tsc --target es5 --outDir lib --module commonjs --declaration",
+    "build": "npm run build:commonjs",
+    "ts": "ts-node src/",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.woa.com/cls_team/tencentcloud-cls-sdk-js.git"
+  },
+  "author": "farmerx",
+  "license": "Apache",
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/jest": "^27.0.1",
+    "@types/node": "^16.9.2",
+    "chai": "^4.2.0",
+    "rimraf": "^3.0.2",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
+  "files": [
+    "dist/",
+    "vendor/",
+    "LICENSE",
+    "README.md",
+    "sls.proto"
+  ],
+  "dependencies": {
+    "axios": "^0.24.0",
+    "protobufjs": "^6.11.2"
+  }
+}
