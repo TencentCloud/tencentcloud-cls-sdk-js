@@ -1,12 +1,12 @@
 {
   "name": "tencentcloud-cls-sdk-js",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "TencentCloud CLS Javascript SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --reporter spec --require ts-node/register test/**/*.test.ts",
-    "build:commonjs": "rimraf lib && tsc --target es5 --outDir lib --module commonjs --declaration",
+    "build:commonjs": "rimraf dist && tsc --target es5 --outDir dist --module commonjs --declaration",
     "build": "npm run build:commonjs",
     "ts": "ts-node src/",
     "prepublishOnly": "npm run build"
