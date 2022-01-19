@@ -106,7 +106,7 @@ export class AsyncClient {
 
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
             try {
-                let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes);
+                let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes, request.getTopic());
                 let putLogRequest = new Response();
                 putLogRequest.setAllHeaders(res.headers);
                 putLogRequest.setHttpStatusCode(res.status);
@@ -144,7 +144,7 @@ export class AsyncClient {
      * @param body 
      * @returns 
      */
-    private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): Promise<any> {
+    private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
         headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
         let signature_str: string = signature(this.secretId, this.secretKey, method, resourceUri, urlParameter, headParameter, 300000);
         headParameter.set(CONST_AUTHORIZATION, signature_str);
@@ -153,7 +153,7 @@ export class AsyncClient {
              headers[key] = value;
         });
         return axios.default({
-            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"=091d403b-18f0-4ed7-808e-e84a7d4ade84",
+            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
             data: body,
             headers,
