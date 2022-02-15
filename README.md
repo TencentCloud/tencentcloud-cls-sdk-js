@@ -13,7 +13,8 @@
 | retry_times      |         | integer          | true     | 重试次数                                      |
 
 
-
+CLS Host
+https://cloud.tencent.com/document/product/614/18940
 
 
 ## Example
