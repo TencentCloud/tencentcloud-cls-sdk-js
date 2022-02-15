@@ -13,7 +13,9 @@
 | retry_times      |         | integer          | true     | 重试次数                                      |
 
 
-CLS Host
+## CLS Host
+
+** 本项目使用 日志服务 API 2017  **
 https://cloud.tencent.com/document/product/614/18940
 
 
