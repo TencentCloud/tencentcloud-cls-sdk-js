@@ -1,7 +1,6 @@
 ## CLS JavaScript SDK
 
-腾讯云CLS日志上传SDK, 支持nodejs和browser.
-
+腾讯云CLS日志上传SDK, 支持nodejs
 ## Configuration
 
 | Config Name   | Default | Type            | Required | Description                                                  |
