@@ -1,10 +1,11 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION } from './common/constants';
+import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING } from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import { signature } from "./common/sign";
 import * as axios from "axios"
 import { Response } from './response/response';
+import { SearchLogRequest } from './request/searchResquest';
 
 export class AsyncClient {
     /**
@@ -100,7 +101,7 @@ export class AsyncClient {
             throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
         }
       
-        let headParameter = this.getCommonHeadPara();
+        let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
         request.setParam(TOPIC_ID, request.getTopic());
         let urlParameter = request.getAllParams();
 
@@ -135,6 +136,70 @@ export class AsyncClient {
         }        
     }
 
+
+    /**
+     * SearchLog
+     */    
+    public async SearchLog(request: SearchLogRequest): Promise<any> {
+        if (request.LogsetId == null || request.LogsetId == undefined || request.LogsetId.length == 0) {
+            throw new TencentCloudClsSDKException("logset_id can not be empty")
+        }
+
+        if (request.TopicId == null || request.TopicId == undefined || request.TopicId.length == 0) {
+            throw new TencentCloudClsSDKException("topic_id can not be empty")
+        }
+
+        if (request.StartTime == null || request.StartTime == undefined || request.StartTime.length == 0) {
+            throw new TencentCloudClsSDKException("start_time can not be empty")
+        }
+
+        if (request.EndTime == null || request.EndTime == undefined || request.EndTime.length == 0) {
+            throw new TencentCloudClsSDKException("end_time can not be empty")
+        }
+
+        if (request.Limit == null || request.Limit == undefined || request.Limit.length == 0 || parseInt(request.Limit, 10) > 100) {
+            throw new TencentCloudClsSDKException("sort parameter is invalid")
+        }
+
+        if (request.Sort != "asc" && request.Sort != "desc" ) {
+            throw new TencentCloudClsSDKException("sort parameter is invalid")
+        }
+
+        let urlParameter = request.getAllParams();
+        urlParameter.set(TOPIC_IDS, request.TopicId);
+        urlParameter.set(LOGSET_ID, request.LogsetId);
+        urlParameter.set(START_TIME, request.StartTime);
+        urlParameter.set(END_TIME, request.EndTime);
+        urlParameter.set(LIMIT, request.Limit);
+        urlParameter.set(QUERY_STRING, request.QueryString)
+        if (request.Context != null && request.Context != undefined && request.Context.length > 0) {
+            urlParameter.set(CONTEXT, request.Context);
+        }
+        urlParameter.set(SORT, request.Sort);
+
+        let headParameter = this.getCommonHeadPara(CONST_JSON);
+        headParameter.delete(CONST_CONTENT_LENGTH)
+        let signature_str: string = signature(this.secretId, this.secretKey, CONST_HTTP_METHOD_GET, "/searchlog", new Map(), headParameter, 300000);
+        headParameter.set(CONST_AUTHORIZATION, signature_str);
+
+        let headers: {[key: string]: string} = {};
+        headParameter.forEach((value , key) =>{
+             headers[key] = value;
+        });
+
+        let uri = ""
+        urlParameter.forEach((value , key) =>{
+            uri+= key+"="+encodeURIComponent(value)+"&";
+        });
+        uri = uri.substring(0, uri.length-1)
+    
+        return axios.default({
+            url: this.httpType+this.hostName+"/searchlog"+"?"+uri,
+            method: "get",
+            headers,
+        });
+    }
+
     /**
      * sendLogs
      * @param method  Http Method
@@ -153,7 +218,7 @@ export class AsyncClient {
              headers[key] = value;
         });
         return axios.default({
-            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
+            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_IDS+"="+topic,
             method: "post",
             data: body,
             headers,
@@ -165,10 +230,10 @@ export class AsyncClient {
      * 获取common headers
      * @returns Map<string, string>
      */
-    private getCommonHeadPara(): Map<string, string>{
+    private getCommonHeadPara(contentType: string): Map<string, string>{
         let headParameter: Map<string, string> = new Map();
         headParameter.set(CONST_CONTENT_LENGTH, "0");
-        headParameter.set(CONST_CONTENT_TYPE, CONST_PROTO_BUF);
+        headParameter.set(CONST_CONTENT_TYPE, contentType);
         headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }

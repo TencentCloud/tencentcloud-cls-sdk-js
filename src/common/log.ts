@@ -1,5 +1,4 @@
 import { cls } from '../../vendor/compiled'
-// import {Long} from 'long';
 
 
 export class LogGroup {

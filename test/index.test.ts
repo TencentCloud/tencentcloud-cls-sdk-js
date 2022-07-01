@@ -4,10 +4,11 @@ import * as chai from 'chai';
 import {LogItem, Content, LogGroup, AsyncClient} from '../src/index'
 import { signature } from '../src/common/sign';
 import { PutLogsRequest } from '../src/request/putLogsRequest';
+import { SearchLogRequest } from '../src/request/searchResquest';
  
 const expect = chai.expect;
 describe('send log test', () => {
-    it('test build pb content' , () => {
+    it.skip('test build pb content' , () => {
         let item = new LogItem()
         item.pushBack(new Content("hello", "world"))
         item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world"))
@@ -24,7 +25,7 @@ describe('send log test', () => {
         expect(verify_str).to.equal(null)
     });
 
-    it('test sign' , () => {
+    it.skip('test sign' , () => {
         let params: Map<string, string> = new Map()
         let headers: Map<string, string> = new Map()
         params.set('logset_id', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
@@ -33,7 +34,7 @@ describe('send log test', () => {
         signature('SecretIdExample_XXXXXXXXXXXXXXXXXXXXX', 'SecretKeyExample_XXXXXXXXXXXXXXXX', 'GET', '/logset', params,headers, 300);
     });
 
-    it('test send logs' , async () => {
+    it.skip('test send logs' , async () => {
         let client = new AsyncClient({
             endpoint: "ap-guangzhou.cls.tencentcs.com",
             secretId: "*", 
@@ -52,5 +53,30 @@ describe('send log test', () => {
         let request = new PutLogsRequest("*", loggroup);
         let data = await client.PutLogs(request);
         console.log(data, "--------")
+    });
+
+    it('search log' , async () => {
+        let client = new AsyncClient({
+            endpoint: "ap-guangzhou.cls.tencentcs.com",
+            secretId: "", 
+            secretKey: "",
+            sourceIp: "127.0.0.1",
+            retry_times: 2,
+            compress: true,
+        });
+        try {
+            let result = await client.SearchLog(new SearchLogRequest(
+                "", 
+                "", 
+                "2022-07-01 18:12:36", 
+                "2022-07-01 19:12:35", 
+                "*", 
+                "10"
+            ))
+            console.log(result.data)
+        } catch (exception) {
+            console.log(exception.response)
+        }
+    
     });
 });
