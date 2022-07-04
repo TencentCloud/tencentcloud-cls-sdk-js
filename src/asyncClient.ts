@@ -218,7 +218,7 @@ export class AsyncClient {
              headers[key] = value;
         });
         return axios.default({
-            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_IDS+"="+topic,
+            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
             data: body,
             headers,
