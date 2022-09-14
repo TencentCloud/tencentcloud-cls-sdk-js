@@ -1,6 +1,12 @@
 ## CLS JavaScript SDK
 
 腾讯云CLS日志上传SDK, 支持nodejs
+
+## Install
+```
+npm i tencentcloud-cls-sdk-js
+```
+
 ## Configuration
 
 | Config Name   | Default | Type            | Required | Description                                                  |
