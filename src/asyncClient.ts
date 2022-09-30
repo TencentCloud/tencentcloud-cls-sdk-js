@@ -97,19 +97,40 @@ export class AsyncClient {
                     throw new TencentCloudClsSDKException("send log failed and exceed retry times");
                 }
             } catch (error) {
+                let requestId = ""
+                if (error.response &&error.response.headers) {
+                    requestId = error.response.headers['x-cls-requestid'];
+                }
+
                 if (error.response && error.response.status==413) {
                     let putLogRequest = new Response();
                     putLogRequest.setAllHeaders(error.response.headers);
                     putLogRequest.setHttpStatusCode(error.response.status);
+                    
+                    if (error.response.data.errorcode != null && error.response.data.errorcode!= undefined) {
+                        putLogRequest.setErrorCode(error.response.data.errorcode);
+                    }
+
+                    if (error.response.data.errormessage != null && error.response.data.errormessage!= undefined) {
+                        putLogRequest.setErrorMessage(error.response.data.errormessage);
+                    }
+
                     return putLogRequest;
                 }
-                if (retryTimes+1 >= this.retry_times) { 
+                if (retryTimes+1 >= this.retry_times) {
                     let putLogRequest = new Response();
                     if (error.response) {
                         putLogRequest.setAllHeaders(error.response.headers);
                         putLogRequest.setHttpStatusCode(error.response.status);
+                        if (error.response.data.errorcode != null && error.response.data.errorcode!= undefined) {
+                            putLogRequest.setErrorCode(error.response.data.errorcode);
+                        }
+    
+                        if (error.response.data.errormessage != null && error.response.data.errormessage!= undefined) {
+                            putLogRequest.setErrorMessage(error.response.data.errormessage);
+                        }
                     }
-                    throw new TencentCloudClsSDKException(`send log failed and exceed retry times. error: ${error.message}. request： ${JSON.stringify(putLogRequest)}`);
+                    throw new TencentCloudClsSDKException(`send log failed and exceed retry times. reason: ${JSON.stringify(putLogRequest)},  error: ${error.message}.`, requestId);
                 }   
             }
         }        
