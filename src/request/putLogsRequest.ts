@@ -1,6 +1,5 @@
 import { LogGroup } from "../common/log";
 import { Request } from "./request";
-// import {CONST_PROTO_BUF} from "../common/constants"
 
 export class PutLogsRequest extends Request{
     private  mTopic: string;

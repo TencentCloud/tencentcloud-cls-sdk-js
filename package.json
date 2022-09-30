@@ -1,6 +1,6 @@
 {
-  "name": "tencentcloud-cls-sdk-js",
-  "version": "1.0.5",
+  "name": "tencentcloud-cls-sdk-js-web",
+  "version": "1.0.1",
   "description": "TencentCloud CLS Javascript SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

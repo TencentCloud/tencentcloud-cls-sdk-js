@@ -1,12 +1,9 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING } from './common/constants';
+import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
-import { signature } from "./common/sign";
 import * as axios from "axios"
 import { Response } from './response/response';
-import { SearchLogRequest } from './request/searchResquest';
-
 export class AsyncClient {
     /**
      * httpType http type
@@ -16,14 +13,7 @@ export class AsyncClient {
      * HostName hostname
      */
     private hostName: string;
-    /**
-     * 腾讯云账户secretId
-     */
-    private secretId: string;
-    /**
-     * 腾讯云账户secretKey
-     */
-    private secretKey: string;
+  
     /**
      * sourceIp 来源ip
      */
@@ -47,14 +37,6 @@ export class AsyncClient {
 
         if (options.endpoint == null || options.endpoint == undefined || options.endpoint.length == 0) {
             throw new TencentCloudClsSDKException("options endpoint can not be empty")
-        }
-
-        if (options.secretId == null || options.secretId == undefined || options.secretId.length == 0) {
-            throw new TencentCloudClsSDKException("options secretId can not be empty")
-        }
-
-        if (options.secretKey == null || options.secretKey == undefined || options.secretKey.length == 0) {
-            throw new TencentCloudClsSDKException("options secretKey can not be empty")
         }
 
         if (options.sourceIp == null || options.sourceIp == undefined || options.sourceIp.length == 0) {
@@ -85,8 +67,6 @@ export class AsyncClient {
             // this.compress = options.compress;
         }
 
-        this.secretId = options.secretId;
-        this.secretKey = options.secretKey;
         this.sourceIp = options.sourceIp;
     }
 
@@ -103,11 +83,10 @@ export class AsyncClient {
       
         let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
         request.setParam(TOPIC_ID, request.getTopic());
-        let urlParameter = request.getAllParams();
-
+      
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
             try {
-                let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes, request.getTopic());
+                let res = await this.sendLogs(UPLOAD_LOG_RESOURCE_URI, headParameter, logBytes, request.getTopic());
                 let putLogRequest = new Response();
                 putLogRequest.setAllHeaders(res.headers);
                 putLogRequest.setHttpStatusCode(res.status);
@@ -138,69 +117,6 @@ export class AsyncClient {
 
 
     /**
-     * SearchLog
-     */    
-    public async SearchLog(request: SearchLogRequest): Promise<any> {
-        if (request.LogsetId == null || request.LogsetId == undefined || request.LogsetId.length == 0) {
-            throw new TencentCloudClsSDKException("logset_id can not be empty")
-        }
-
-        if (request.TopicId == null || request.TopicId == undefined || request.TopicId.length == 0) {
-            throw new TencentCloudClsSDKException("topic_id can not be empty")
-        }
-
-        if (request.StartTime == null || request.StartTime == undefined || request.StartTime.length == 0) {
-            throw new TencentCloudClsSDKException("start_time can not be empty")
-        }
-
-        if (request.EndTime == null || request.EndTime == undefined || request.EndTime.length == 0) {
-            throw new TencentCloudClsSDKException("end_time can not be empty")
-        }
-
-        if (request.Limit == null || request.Limit == undefined || request.Limit.length == 0 || parseInt(request.Limit, 10) > 100) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        if (request.Sort != "asc" && request.Sort != "desc" ) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        let urlParameter = request.getAllParams();
-        urlParameter.set(TOPIC_IDS, request.TopicId);
-        urlParameter.set(LOGSET_ID, request.LogsetId);
-        urlParameter.set(START_TIME, request.StartTime);
-        urlParameter.set(END_TIME, request.EndTime);
-        urlParameter.set(LIMIT, request.Limit);
-        urlParameter.set(QUERY_STRING, request.QueryString)
-        if (request.Context != null && request.Context != undefined && request.Context.length > 0) {
-            urlParameter.set(CONTEXT, request.Context);
-        }
-        urlParameter.set(SORT, request.Sort);
-
-        let headParameter = this.getCommonHeadPara(CONST_JSON);
-        headParameter.delete(CONST_CONTENT_LENGTH)
-        let signature_str: string = signature(this.secretId, this.secretKey, CONST_HTTP_METHOD_GET, "/searchlog", new Map(), headParameter, 300000);
-        headParameter.set(CONST_AUTHORIZATION, signature_str);
-
-        let headers: {[key: string]: string} = {};
-        headParameter.forEach((value , key) =>{
-             headers[key] = value;
-        });
-
-        let uri = ""
-        urlParameter.forEach((value , key) =>{
-            uri+= key+"="+encodeURIComponent(value)+"&";
-        });
-        uri = uri.substring(0, uri.length-1)
-    
-        return axios.default({
-            url: this.httpType+this.hostName+"/searchlog"+"?"+uri,
-            method: "get",
-            headers,
-        });
-    }
-
-    /**
      * sendLogs
      * @param method  Http Method
      * @param resourceUri 
@@ -209,10 +125,8 @@ export class AsyncClient {
      * @param body 
      * @returns 
      */
-    private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
-        headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
-        let signature_str: string = signature(this.secretId, this.secretKey, method, resourceUri, urlParameter, headParameter, 300000);
-        headParameter.set(CONST_AUTHORIZATION, signature_str);
+    private async sendLogs(resourceUri: string, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
+        headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());;
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
              headers[key] = value;
