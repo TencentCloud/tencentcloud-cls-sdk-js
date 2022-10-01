@@ -46,7 +46,7 @@ export class LogGroup {
     private source: string;
     private contextflow: string;
     private filename: string;
-    private logs: Log[];
+    private logs: Log[] = [];
     constructor(source: string, filename?: string, contextflow?: string) { 
         this.source = source
         if (filename!=null && filename!=undefined) {
@@ -89,5 +89,8 @@ export class LogGroup {
         return this.logs;
     }
 
+    public addLog(log: Log) {
+        this.logs.push(log)
+    }
 }
 

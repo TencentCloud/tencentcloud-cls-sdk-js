@@ -11,13 +11,12 @@ describe('send log test', () => {
 
         let logGroup = new LogGroup("127.0.0.1")
         logGroup.setSource("127.0.0.1")
-        let logs: Log[] = [];
+
         let log = new Log(Date.now())
         log.addContent("hello", "hello world中文")
-        logs.push(log)
-        logGroup.setLogs(logs)
-    
-        let request = new PutLogsRequest("*", logGroup);
+        logGroup.addLog(log)
+
+        let request = new PutLogsRequest("", logGroup);
         await client.PutLogs(request);
     });
 });
