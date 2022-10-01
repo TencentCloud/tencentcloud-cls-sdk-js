@@ -1,16 +1,15 @@
-import { LogGroup } from "../common/log";
+import { LogGroup } from "../common/cls_log";
 import { Request } from "./request";
 
 export class PutLogsRequest extends Request{
-    private  mTopic: string;
-	private  mSource: string;
-	private  mlogItems: LogGroup;
-	// private  mContentType: string = CONST_PROTO_BUF;
+    private  topic: string;
+	private  source: string;
+	private  logItems: LogGroup;
 
     constructor(topic: string, logItems: LogGroup) {
         super();
-        this.mTopic = topic;
-        this.mlogItems = logItems;
+        this.topic = topic;
+        this.logItems = logItems;
     }
 
     /**
@@ -18,7 +17,7 @@ export class PutLogsRequest extends Request{
      * @returns 
      */
     public getFilename(): string {
-		return this.mlogItems.getFilename();
+		return this.logItems.getFilename();
 	}
 
     /**
@@ -26,7 +25,7 @@ export class PutLogsRequest extends Request{
      * @param filename 
      */
 	public setFilename(filename: string): void {
-		this.mlogItems.setFilename(filename);
+		this.logItems.setFilename(filename);
 	}
 
     /**
@@ -34,7 +33,7 @@ export class PutLogsRequest extends Request{
      * @returns string
      */
     public getTopic(): string {
-		return this.mTopic;
+		return this.topic;
 	}
 
     /**
@@ -42,7 +41,7 @@ export class PutLogsRequest extends Request{
      * @param topic 
      */
     public setTopic(topic: string): void {
-		this.mTopic = topic;
+		this.topic = topic;
 	}
 
     /**
@@ -50,7 +49,7 @@ export class PutLogsRequest extends Request{
      * @returns string
      */
     public getSource(): string {
-		return this.mSource;
+		return this.source;
 	}
 
 	/**
@@ -58,7 +57,7 @@ export class PutLogsRequest extends Request{
 	 * @param source log source
 	 */
 	public setSource(source: string): void {
-		this.mSource = source;
+		this.source = source;
 	}
 
     /**
@@ -66,7 +65,7 @@ export class PutLogsRequest extends Request{
      * @returns 
      */
     public getLogItems(): LogGroup {
-		return this.mlogItems;
+		return this.logItems;
 	}
 
     /**
@@ -74,16 +73,15 @@ export class PutLogsRequest extends Request{
      * @param logItems 
      */
     public setlogItems(logItems: LogGroup): void {
-		this.mlogItems = logItems;
+		this.logItems = logItems;
 	}
 
     /**
-     * pb build
-     * @returns Uint8Array
+     * json encode 
+     * @returns string
      */
-    public getLogGroupBytes(source: string): Uint8Array {
-        this.mlogItems.setSource(source)
-        return this.mlogItems.encode()
+    public encodeLogItems(): string {
+        return JSON.stringify(this.logItems)
     }
-
+    
 }

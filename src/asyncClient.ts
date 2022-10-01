@@ -1,9 +1,10 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
+import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import * as axios from "axios"
 import { Response } from './response/response';
+
 export class AsyncClient {
     /**
      * httpType http type
@@ -13,21 +14,10 @@ export class AsyncClient {
      * HostName hostname
      */
     private hostName: string;
-  
-    /**
-     * sourceIp 来源ip
-     */
-    private sourceIp: string;
     /**
      * retry_times 上传失败重试次数
      */
     private retry_times: number;
-    /**
-     * 是否开启压缩上传
-     * @param compress 
-     */
-    //  private compress: boolean = false;
-
 
     constructor(options: AsyncClientOptions) { 
         // 参数校验
@@ -37,10 +27,6 @@ export class AsyncClient {
 
         if (options.endpoint == null || options.endpoint == undefined || options.endpoint.length == 0) {
             throw new TencentCloudClsSDKException("options endpoint can not be empty")
-        }
-
-        if (options.sourceIp == null || options.sourceIp == undefined || options.sourceIp.length == 0) {
-            throw new TencentCloudClsSDKException("options sourceIp can not be empty")
         }
 
         this.retry_times = options.retry_times;
@@ -62,12 +48,6 @@ export class AsyncClient {
         while (this.hostName.endsWith("/")) {
             this.hostName = this.hostName.substring(0, this.hostName.length - 1);
         }
-
-        if (options.compress) {
-            // this.compress = options.compress;
-        }
-
-        this.sourceIp = options.sourceIp;
     }
 
     /**
@@ -76,12 +56,12 @@ export class AsyncClient {
      * @returns 
      */
     public async PutLogs(request: PutLogsRequest): Promise<any> {
-        let logBytes = request.getLogGroupBytes(this.sourceIp);
+        let logBytes = request.encodeLogItems();
         if (logBytes.length > CONST_MAX_PUT_SIZE) {
             throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
         }
       
-        let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
+        let headParameter = this.getCommonHeadPara(CONST_JSON);
         request.setParam(TOPIC_ID, request.getTopic());
       
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
@@ -135,27 +115,25 @@ export class AsyncClient {
             }
         }        
     }
-
-
+    
     /**
      * sendLogs
-     * @param method  Http Method
      * @param resourceUri 
-     * @param urlParameter 
      * @param headParameter 
      * @param body 
      * @returns 
      */
-    private async sendLogs(resourceUri: string, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
-        headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());;
+    private async sendLogs(resourceUri: string, headParameter: Map<string, string>, body: string, topic: string): Promise<any> {
+        let data = new TextEncoder().encode(body)
+        headParameter.set(CONST_CONTENT_LENGTH, data.length.toString());;
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
-             headers[key] = value;
+            headers[key] = value;
         });
         return axios.default({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
-            data: body,
+            data: data,
             headers,
         });
     }
