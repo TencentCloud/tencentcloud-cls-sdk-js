@@ -5,7 +5,7 @@ import { PutLogsRequest } from '../src/request/putLogsRequest';
 describe('send log test', () => {
     it('test send logs' , async () => {
         let client = new AsyncClient({
-            endpoint: "http://cls-test.tencentcs.com",
+            endpoint: "http://ap-guangzhou-open.cls.tencentcs.com",
             retry_times: 2,
         });
 
