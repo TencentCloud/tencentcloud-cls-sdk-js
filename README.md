@@ -32,15 +32,15 @@ let client = new AsyncClient({
     retry_times: 10,
 });
 
-let logGroup = new LogGroup("127.0.0.1")
-logGroup.setSource("127.0.0.1")
+let logGroup = new LogGroup([IP Address])
+logGroup.setSource(【IP Address】)
 
 let log = new Log(Date.now())
 log.addContent("hello", "hello world中文")
 log.addContent("world", "你好，我来自深圳|hello world2")
 logGroup.addLog(log)
 
-let request = new PutLogsRequest("502a8a0d-8ed4-4a3b-a603-9b427d61c04e", logGroup);
+let request = new PutLogsRequest("【topicID】", logGroup);
 let data = await client.PutLogs(request)
 
 ```
