@@ -1,6 +1,6 @@
 {
   "name": "tencentcloud-cls-sdk-js-web",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "TencentCloud CLS Javascript web SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,11 +31,9 @@
     "dist/",
     "vendor/",
     "LICENSE",
-    "README.md",
-    "sls.proto"
+    "README.md"
   ],
   "dependencies": {
-    "axios": "^0.24.0",
-    "protobufjs": "^6.11.2"
+    "axios": "^0.24.0"
   }
 }

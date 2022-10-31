@@ -124,12 +124,17 @@ export class AsyncClient {
      * @returns 
      */
     private async sendLogs(resourceUri: string, headParameter: Map<string, string>, body: string, topic: string): Promise<any> {
-        let data = new TextEncoder().encode(body)
+
+        // let data = new TextEncoder().encode(body)
+        var buffer =this.stringToArrayBuffer(body)
+        var data=new Uint8Array(buffer);
         headParameter.set(CONST_CONTENT_LENGTH, data.length.toString());;
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
             headers[key] = value;
         });
+    
+        
         return axios.default({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
@@ -150,5 +155,35 @@ export class AsyncClient {
         headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }
+
+    public  stringToArrayBuffer(str: string) {
+        var bytes = new Array(); 
+        var len,c;
+        len = str.length;
+        for(var i = 0; i < len; i++){
+            c = str.charCodeAt(i);
+            if(c >= 0x010000 && c <= 0x10FFFF){
+                bytes.push(((c >> 18) & 0x07) | 0xF0);
+                bytes.push(((c >> 12) & 0x3F) | 0x80);
+                bytes.push(((c >> 6) & 0x3F) | 0x80);
+                bytes.push((c & 0x3F) | 0x80);
+            }else if(c >= 0x000800 && c <= 0x00FFFF){
+                bytes.push(((c >> 12) & 0x0F) | 0xE0);
+                bytes.push(((c >> 6) & 0x3F) | 0x80);
+                bytes.push((c & 0x3F) | 0x80);
+            }else if(c >= 0x000080 && c <= 0x0007FF){
+                bytes.push(((c >> 6) & 0x1F) | 0xC0);
+                bytes.push((c & 0x3F) | 0x80);
+            }else{
+                bytes.push(c & 0xFF);
+            }
+      }
+      var array = new Int8Array(bytes.length);
+      for(let i in bytes){
+        array[i] =bytes[i];
+      }
+      return array.buffer;
+    }
+
 }
 

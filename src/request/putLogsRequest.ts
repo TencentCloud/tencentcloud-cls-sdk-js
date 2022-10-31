@@ -83,5 +83,5 @@ export class PutLogsRequest extends Request{
     public encodeLogItems(): string {
         return JSON.stringify(this.logItems)
     }
-    
+
 }
