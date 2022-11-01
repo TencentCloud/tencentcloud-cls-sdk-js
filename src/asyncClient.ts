@@ -2,7 +2,10 @@ import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
 import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
-import * as axios from "axios"
+import axios from "axios"
+import mpAdapter from 'axios-miniprogram-adapter'
+axios.defaults.adapter = mpAdapter
+
 import { Response } from './response/response';
 
 export class AsyncClient {
@@ -135,7 +138,7 @@ export class AsyncClient {
         });
     
         
-        return axios.default({
+        return axios({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
             data: data,
