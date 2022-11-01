@@ -4,7 +4,7 @@
 
 ## Install
 ```
-npm i tencentcloud-cls-sdk-js-web
+npm i tencentcloud-cls-sdk-js-mini
 ```
 
 ## Configuration
@@ -25,7 +25,7 @@ https://cloud.tencent.com/document/product/614/18940
 ## Example
 
 ```
-import {Log, LogGroup, AsyncClient, PutLogsRequest} from 'tencentcloud-cls-sdk-js-web'
+import {Log, LogGroup, AsyncClient, PutLogsRequest} from 'tencentcloud-cls-sdk-js-mini'
 
 let client = new AsyncClient({
     endpoint: "ap-guangzhou.cls.tencentcs.com",
