@@ -16,6 +16,7 @@ npm i tencentcloud-cls-sdk-js
 | endpoint      |         | string          | true     | Your CLS endpoint, e.g. ap-guangzhou.cls.tencentcs.com |
 | sourceIp      |         | string          | true     | 本机ip                                        |
 | retry_times      |         | integer          | true     | 重试次数                                      |
+| topic_id      |         | string          | true     | 日志服务对应topic_id                                      |
 
 
 ## CLS Host
@@ -29,6 +30,10 @@ https://cloud.tencent.com/document/product/614/18940
 ## Example
 
 ```
+
+// 日志服务对应topic_id； 必填参数
+let topicID = "xxxx"
+
 let client = new AsyncClient({
             endpoint: "ap-guangzhou.cls.tencentcs.com",
             secretId: "[secretId]", 
@@ -43,7 +48,7 @@ item.setTime(Math.floor(Date.now()/1000))
 
 let loggroup = new LogGroup()
 loggroup.addLogs(item)
-let request = new PutLogsRequest("[Topic_ID]", loggroup);
+let request = new PutLogsRequest(topicID, loggroup);
 let data = await client.PutLogs(request);
 console.log(data)
 ```
