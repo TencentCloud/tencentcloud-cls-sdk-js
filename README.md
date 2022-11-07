@@ -16,7 +16,7 @@ npm i tencentcloud-cls-sdk-js
 | endpoint      |         | string          | true     | Your CLS endpoint, e.g. ap-guangzhou.cls.tencentcs.com |
 | sourceIp      |         | string          | true     | 本机ip                                        |
 | retry_times      |         | integer          | true     | 重试次数                                      |
-| topic_id      |         | string          | true     | 日志服务对应topic_id                                      |
+| topic_id      |         | string          | true     | CLS日志服务日志主题ID                                    |
 
 
 ## CLS Host
@@ -31,7 +31,7 @@ https://cloud.tencent.com/document/product/614/18940
 
 ```
 
-// 日志服务对应topic_id； 必填参数
+// CLS日志服务日志主题ID； 必填参数
 let topicID = "xxxx"
 
 let client = new AsyncClient({
