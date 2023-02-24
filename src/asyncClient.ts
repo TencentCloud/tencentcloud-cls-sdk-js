@@ -1,6 +1,6 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING } from './common/constants';
+import { CONST_CONTENT_TYPE, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING } from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import { signature } from "./common/sign";
 import * as axios from "axios"
@@ -34,12 +34,12 @@ export class AsyncClient {
     private retry_times: number;
     /**
      * 是否开启压缩上传
-     * @param compress 
+     * @param compress
      */
     //  private compress: boolean = false;
 
 
-    constructor(options: AsyncClientOptions) { 
+    constructor(options: AsyncClientOptions) {
         // 参数校验
         if (options == null || options == undefined) {
             throw new TencentCloudClsSDKException("AsyncClientOptions invalid")
@@ -76,7 +76,7 @@ export class AsyncClient {
             this.hostName = options.endpoint;
             this.httpType = "http://";
         }
-        
+
         while (this.hostName.endsWith("/")) {
             this.hostName = this.hostName.substring(0, this.hostName.length - 1);
         }
@@ -92,20 +92,20 @@ export class AsyncClient {
 
     /**
      * PutLogs
-     * @param request 
-     * @returns 
+     * @param request
+     * @returns
      */
     public async PutLogs(request: PutLogsRequest): Promise<any> {
         let logBytes = request.getLogGroupBytes(this.sourceIp);
         if (logBytes.length > CONST_MAX_PUT_SIZE) {
             throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
         }
-      
+
         let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
         request.setParam(TOPIC_ID, request.getTopic());
         let urlParameter = request.getAllParams();
 
-        for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
+        for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) {
             try {
                 let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes, request.getTopic());
                 let putLogRequest = new Response();
@@ -114,7 +114,7 @@ export class AsyncClient {
                 if (putLogRequest.getHttpStatusCode()==200) {
                     return putLogRequest;
                 }
-                if (retryTimes+1 >= this.retry_times) { 
+                if (retryTimes+1 >= this.retry_times) {
                     throw new TencentCloudClsSDKException("send log failed and exceed retry times");
                 }
             } catch (error) {
@@ -124,22 +124,22 @@ export class AsyncClient {
                     putLogRequest.setHttpStatusCode(error.response.status);
                     return putLogRequest;
                 }
-                if (retryTimes+1 >= this.retry_times) { 
+                if (retryTimes+1 >= this.retry_times) {
                     let putLogRequest = new Response();
                     if (error.response) {
                         putLogRequest.setAllHeaders(error.response.headers);
                         putLogRequest.setHttpStatusCode(error.response.status);
                     }
                     throw new TencentCloudClsSDKException(`send log failed and exceed retry times. error: ${error.message}. request： ${JSON.stringify(putLogRequest)}`);
-                }   
+                }
             }
-        }        
+        }
     }
 
 
     /**
      * SearchLog
-     */    
+     */
     public async SearchLog(request: SearchLogRequest): Promise<any> {
         if (request.LogsetId == null || request.LogsetId == undefined || request.LogsetId.length == 0) {
             throw new TencentCloudClsSDKException("logset_id can not be empty")
@@ -178,7 +178,6 @@ export class AsyncClient {
         urlParameter.set(SORT, request.Sort);
 
         let headParameter = this.getCommonHeadPara(CONST_JSON);
-        headParameter.delete(CONST_CONTENT_LENGTH)
         let signature_str: string = signature(this.secretId, this.secretKey, CONST_HTTP_METHOD_GET, "/searchlog", new Map(), headParameter, 300000);
         headParameter.set(CONST_AUTHORIZATION, signature_str);
 
@@ -192,7 +191,7 @@ export class AsyncClient {
             uri+= key+"="+encodeURIComponent(value)+"&";
         });
         uri = uri.substring(0, uri.length-1)
-    
+
         return axios.default({
             url: this.httpType+this.hostName+"/searchlog"+"?"+uri,
             method: "get",
@@ -203,14 +202,13 @@ export class AsyncClient {
     /**
      * sendLogs
      * @param method  Http Method
-     * @param resourceUri 
-     * @param urlParameter 
-     * @param headParameter 
-     * @param body 
-     * @returns 
+     * @param resourceUri
+     * @param urlParameter
+     * @param headParameter
+     * @param body
+     * @returns
      */
     private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
-        headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
         let signature_str: string = signature(this.secretId, this.secretKey, method, resourceUri, urlParameter, headParameter, 300000);
         headParameter.set(CONST_AUTHORIZATION, signature_str);
         let headers: {[key: string]: string} = {};
@@ -226,15 +224,13 @@ export class AsyncClient {
     }
 
     /**
-     * GetCommonHeadPara 
+     * GetCommonHeadPara
      * 获取common headers
      * @returns Map<string, string>
      */
     private getCommonHeadPara(contentType: string): Map<string, string>{
         let headParameter: Map<string, string> = new Map();
-        headParameter.set(CONST_CONTENT_LENGTH, "0");
         headParameter.set(CONST_CONTENT_TYPE, contentType);
-        headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }
 }
