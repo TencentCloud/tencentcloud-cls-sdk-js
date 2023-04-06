@@ -2,32 +2,28 @@
 
 腾讯云CLS日志上传SDK, 支持nodejs
 
-## Install
+## 安装指令
 ```
 npm i tencentcloud-cls-sdk-js
 ```
 
-## Configuration
+## 参数描述
 
-| Config Name   | Default | Type            | Required | Description                                                  |
-| ------------- | ------- | --------------- | -------- | ------------------------------------------------------------ |
-| secretId     |         | string          | true     | Your access key to CLS                                       |
-| secretKey  |         | string          | true     | Your secret to access CLS                                    |
-| endpoint      |         | string          | true     | Your CLS endpoint, e.g. ap-guangzhou.cls.tencentcs.com |
-| sourceIp      |         | string          | true     | 本机ip                                        |
-| retry_times      |         | integer          | true     | 重试次数                                      |
-| topic_id      |         | string          | true     | CLS日志服务日志主题ID                                    |
+| 参数名 | 类型     | 必填 | Description                                                  |
+| ------------- | --------------- | -------- | ------------------------------------------------------------ |
+| secretId    | string          | 是 | 访问密钥ID， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
+| secretKey  | string          | 是    | 访问密钥KEY， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
+| endpoint      | string          | 是  | 访问目标日志主题所在地域的域名, e.g. ap-guangzhou.cls.tencentcs.com，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
+| sourceIp      | string          | 否   | 源IP地址， 为空则自动填充本机IP。               |
+| retry_times      | integer          | 是    | 重试次数                                      |
+| topic_id      | string          | 是    | 目标CLS日志服务日志主题ID                                  |
 
+### 注意： 
 
-## CLS Host
-
-**本项目使用 日志服务 API 2017**
-
-
-https://cloud.tencent.com/document/product/614/18940
+endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D)中 **API上传日志** Tab中的域名![image-20230403191435319](/Users/kahinglin/Library/Application Support/typora-user-images/image-20230403191435319.png)
 
 
-## Example
+## 请求样例
 
 ```
 
@@ -35,10 +31,15 @@ https://cloud.tencent.com/document/product/614/18940
 let topicID = "xxxx"
 
 let client = new AsyncClient({
+						// 目标日志主题所在地域域名； 必填参数
             endpoint: "ap-guangzhou.cls.tencentcs.com",
+            // 访问密钥ID； 必填参数
             secretId: "[secretId]", 
+            // 访问密钥KEY； 必填参数
             secretKey: "[secretKey]",
+            // 源IP地址： 选填参数， 为空则自动填充本机IP
             sourceIp: "127.0.0.1",
+            // 重试次数： 必填参数， 为空则自动填充本机IP
             retry_times: 10,
         });
 
