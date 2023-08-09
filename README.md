@@ -14,7 +14,7 @@ npm i tencentcloud-cls-sdk-js
 | secretId    | string          | 是 | 访问密钥ID， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
 | secretKey  | string          | 是    | 访问密钥KEY， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
 | endpoint      | string          | 是  | 访问目标日志主题所在地域的域名, e.g. ap-guangzhou.cls.tencentcs.com，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
-| sourceIp      | string          | 否   | 源IP地址， 为空则自动填充本机IP。               |
+| sourceIp      | string          | 否   | 源IP地址              |
 | retry_times      | integer          | 是    | 重试次数                                      |
 | topic_id      | string          | 是    | 目标CLS日志服务日志主题ID                                  |
 
