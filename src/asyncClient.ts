@@ -63,9 +63,13 @@ export class AsyncClient {
         if (logBytes.length > CONST_MAX_PUT_SIZE) {
             throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
         }
-      
+
         let headParameter = this.getCommonHeadPara(CONST_JSON);
         request.setParam(TOPIC_ID, request.getTopic());
+
+        if (request.getSource() == "" || request.getSource()== undefined){
+            headParameter.set("x-cls-add-source", "1")
+        }
       
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
             try {
