@@ -67,9 +67,9 @@ export class AsyncClient {
         let headParameter = this.getCommonHeadPara(CONST_JSON);
         request.setParam(TOPIC_ID, request.getTopic());
 
-        if (request.getSource() == "" || request.getSource()== undefined){
-            headParameter.set("x-cls-add-source", "1")
-        }
+        // if (request.getSource() == "" || request.getSource()== undefined){
+        //     headParameter.set("x-cls-add-source", "1")
+        // }
       
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
             try {
