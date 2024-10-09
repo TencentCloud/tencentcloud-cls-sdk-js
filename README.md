@@ -11,8 +11,8 @@ npm i tencentcloud-cls-sdk-js
 
 | 参数名 | 类型     | 必填 | Description                                                  |
 | ------------- | --------------- | -------- | ------------------------------------------------------------ |
-| secretId    | string          | 是 | 访问密钥ID， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
-| secretKey  | string          | 是    | 访问密钥KEY， 点击[这里](https://console.cloud.tencent.com/cam/capi)获取 |
+| secretId    | string          | 是 | 访问密钥ID，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
+| secretKey  | string          | 是    | 访问密钥KEY，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
 | endpoint      | string          | 是  | 访问目标日志主题所在地域的域名, e.g. ap-guangzhou.cls.tencentcs.com，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
 | sourceIp      | string          | 否   | 源IP地址              |
 | retry_times      | integer          | 是    | 重试次数                                      |
