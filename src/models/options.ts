@@ -5,4 +5,5 @@ export interface AsyncClientOptions {
     sourceIp: string;
     retry_times: number;
     compress?: boolean;
+    secretToken?: string;
 }

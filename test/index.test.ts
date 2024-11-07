@@ -34,11 +34,12 @@ describe('send log test', () => {
         signature('SecretIdExample_XXXXXXXXXXXXXXXXXXXXX', 'SecretKeyExample_XXXXXXXXXXXXXXXX', 'GET', '/logset', params,headers, 300);
     });
 
-    it.skip('test send logs' , async () => {
+    it('test send logs' , async () => {
         let client = new AsyncClient({
             endpoint: "ap-guangzhou.cls.tencentcs.com",
-            secretId: "*", 
-            secretKey: "*",
+            secretId: "", 
+            secretKey: "",
+            secretToken: "",
             sourceIp: "127.0.0.1",
             retry_times: 2,
             compress: true,
@@ -50,12 +51,12 @@ describe('send log test', () => {
 
         let loggroup = new LogGroup()
         loggroup.addLogs(item)
-        let request = new PutLogsRequest("*", loggroup);
+        let request = new PutLogsRequest("320a4eb0-ff28-4f57-9bdb-b48736c44e78", loggroup);
         let data = await client.PutLogs(request);
         console.log(data, "--------")
     });
 
-    it('search log' , async () => {
+    it.skip('search log' , async () => {
         let client = new AsyncClient({
             endpoint: "ap-guangzhou.cls.tencentcs.com",
             secretId: "", 

@@ -38,6 +38,8 @@ export class AsyncClient {
      */
     //  private compress: boolean = false;
 
+    private secretToken: string;
+
 
     constructor(options: AsyncClientOptions) { 
         // 参数校验
@@ -88,6 +90,23 @@ export class AsyncClient {
         this.secretId = options.secretId;
         this.secretKey = options.secretKey;
         this.sourceIp = options.sourceIp;
+
+        // 赋值给内部变量secretToken
+        if (options.secretToken == null || options.secretToken == undefined) {
+            this.secretToken = "";
+        } else {
+            this.secretToken = options.secretToken;
+        }
+    }
+
+    public ResetSecretToken(secretId: string, secretKey: string, secretToken: string) {
+        if (secretId.length == 0 || secretKey.length == 0 || secretToken.length == 0) {
+            throw new TencentCloudClsSDKException("invalid param. param cannot be empty");
+        }
+
+        this.secretToken = secretToken;
+        this.secretId    = secretId;
+        this.secretKey   = secretKey;
     }
 
     /**
@@ -184,8 +203,12 @@ export class AsyncClient {
 
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
-             headers[key] = value;
+            headers[key] = value;
         });
+        
+        if (this.secretToken.length > 0) {
+            headers["X-Cls-Token"] = this.secretToken;
+        }
 
         let uri = ""
         urlParameter.forEach((value , key) =>{
@@ -217,6 +240,9 @@ export class AsyncClient {
         headParameter.forEach((value , key) =>{
              headers[key] = value;
         });
+        if (this.secretToken.length > 0) {
+            headers["X-Cls-Token"] = this.secretToken;
+        }
         return axios.default({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
