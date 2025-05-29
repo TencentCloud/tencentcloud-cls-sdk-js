@@ -24,7 +24,7 @@ endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product
 ## Example
 
 ```
-import {Log, LogGroup, AsyncClient, PutLogsRequest} from 'tencentcloud-cls-sdk-js-mini'
+import {Log, LogGroup, AsyncClient, PutLogsRequest} from 'tencentcloud-cls-sdk-quickapp'
 
 let client = new AsyncClient({
     endpoint: "ap-guangzhou.cls.tencentcs.com",
