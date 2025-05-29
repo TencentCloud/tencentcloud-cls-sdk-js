@@ -57,6 +57,7 @@ export class LogGroup {
         }
     }
 
+
     public setSource(source: string) {
         this.source = source;
     }
