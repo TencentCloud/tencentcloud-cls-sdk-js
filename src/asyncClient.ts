@@ -1,6 +1,6 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
+import { CONST_CONTENT_TYPE, CONST_JSON, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import axios from "axios"
 
@@ -129,17 +129,12 @@ export class AsyncClient {
      * @returns 
      */
     private async sendLogs(resourceUri: string, headParameter: Map<string, string>, body: string, topic: string): Promise<any> {
-
-        // let data = new TextEncoder().encode(body)
         var buffer =this.stringToArrayBuffer(body)
         var data=new Uint8Array(buffer);
-        headParameter.set(CONST_CONTENT_LENGTH, data.length.toString());;
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
             headers[key] = value;
         });
-    
-        
         return axios({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
             method: "post",
@@ -155,9 +150,9 @@ export class AsyncClient {
      */
     private getCommonHeadPara(contentType: string): Map<string, string>{
         let headParameter: Map<string, string> = new Map();
-        headParameter.set(CONST_CONTENT_LENGTH, "0");
+        // headParameter.set(CONST_CONTENT_LENGTH, "0");
         headParameter.set(CONST_CONTENT_TYPE, contentType);
-        headParameter.set(CONST_HOST, this.hostName);
+        // headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }
 

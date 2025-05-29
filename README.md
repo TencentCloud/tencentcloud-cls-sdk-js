@@ -4,7 +4,7 @@
 
 ## Install
 ```
-npm i tencentcloud-cls-sdk-js-mini
+npm i tencentcloud-cls-sdk-quickapp
 ```
 
 ## Configuration
