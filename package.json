@@ -1,6 +1,6 @@
 {
   "name": "tencentcloud-cls-sdk-quickapp",
-  "version": "1.0.4",
+  "version": "1.0.11",
   "description": "TencentCloud CLS Javascript web SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,6 +34,5 @@
     "README.md"
   ],
   "dependencies": {
-    "axios": "1.9.0"
   }
 }

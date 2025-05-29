@@ -31,7 +31,7 @@ export class WebTracker {
     }
 
     private sendInner() {
-        if (this.timer) {
+        if (this.timer != null) {
             if (this.logs.length >= this.count) {
                 clearTimeout(this.timer);
                 this.timer = null;
@@ -83,7 +83,6 @@ export class WebTracker {
         if (this.logs && this.logs.length > 0) {
             this.platformSend();
             // 处理真实发送
-
             if (this.timer != null) {
                 clearTimeout(this.timer);
                 this.timer = null;
