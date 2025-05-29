@@ -3,8 +3,6 @@ import  TencentCloudClsSDKException from './exception'
 import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_MAX_PUT_SIZE, TOPIC_ID, UPLOAD_LOG_RESOURCE_URI} from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import axios from "axios"
-import mpAdapter from 'axios-miniprogram-adapter'
-axios.defaults.adapter = mpAdapter
 
 import { Response } from './response/response';
 
