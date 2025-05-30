@@ -9,10 +9,14 @@ npm i tencentcloud-cls-sdk-quickapp
 
 ## Configuration
 
-| Config Name   | Default | Type            | Required | Description                                                  |
-| ------------- | ------- | --------------- | -------- | ------------------------------------------------------------ |
-| endpoint      |         | string          | true     | Your CLS endpoint, e.g. ap-guangzhou.cls.tencentcs.com |
-| retry_times      |         | integer          | true     | 重试次数                                      |
+| Property         | Type                  | Description                              | Default |
+|------------------|-----------------------|------------------------------------------|---------|
+| host             | string                | -                                        | -       |
+| topicId          | string                | 日志主题                                 | -       |
+| time             | number (optional)     | 发送时间阈值                             | 10s     |
+| count            | number (optional)     | 发送条数阈值                             | 10      |
+| source           | string (optional)     | 日志来源                                 | -       |
+| onPutlogsError   | function (optional)   | 上传异常回调                             | -       |
 
 
 ## CLS Host
@@ -24,24 +28,28 @@ endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product
 ## Example
 
 ```
-import {Log, LogGroup, AsyncClient, PutLogsRequest} from 'tencentcloud-cls-sdk-quickapp'
+import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-quickapp'
 
-let client = new AsyncClient({
-    endpoint: "ap-guangzhou.cls.tencentcs.com",
-    retry_times: 10,
-});
+ let clsTracker = new WebTracker({
+      host: "[域名: http://ap-guangzhou-open.cls.tencentcs.com"],
+      topicId: "【topicId】",
+      time: 10,
+      count: 20,
+      source: "127.0.0.1",
+  })
+  let log = new Log(Date.now())
+  log.addContent("hello", "hello world中文")
+  log.addContent("world", "你好，我来自深圳|hello world2")
+  clsTracker.send(log)   
+```
 
-let logGroup = new LogGroup([IP Address])
-logGroup.setSource(【IP Address】)
+## Function
 
-let log = new Log(Date.now())
-log.addContent("hello", "hello world中文")
-log.addContent("world", "你好，我来自深圳|hello world2")
-logGroup.addLog(log)
-
-let request = new PutLogsRequest("【topicID】", logGroup);
-let data = await client.PutLogs(request)
-
+```
+单条日志上传: send(log: Log): void;
+单条日志立即上传（time和count参数不生效）:  sendImmediate(log: Log): void;
+批量日志上传:  sendBatchLogs(logs: Log[]): void;
+批量日志立即上传: sendBatchLogsImmediate(logs: Log[]): void;
 ```
 
 ## Features

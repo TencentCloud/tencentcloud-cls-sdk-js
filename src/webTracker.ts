@@ -75,7 +75,7 @@ export class WebTracker {
                 if (onError!= undefined) {
                     onError({data: data, code: code});
                 }
-            }
+            },
         })
     }
 
