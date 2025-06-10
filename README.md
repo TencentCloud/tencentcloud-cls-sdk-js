@@ -9,14 +9,16 @@ npm i tencentcloud-cls-sdk-quickapp
 
 ## Configuration
 
-| Property         | Type                  | Description                              | Default |
-|------------------|-----------------------|------------------------------------------|---------|
-| host             | string                | -                                        | -       |
-| topicId          | string                | 日志主题                                 | -       |
-| time             | number (optional)     | 发送时间阈值                             | 10s     |
-| count            | number (optional)     | 发送条数阈值                             | 10      |
-| source           | string (optional)     | 日志来源                                 | -       |
-| onPutlogsError   | function (optional)   | 上传异常回调                             | -       |
+| Property         | Type                | Description                        | Default |
+|------------------|---------------------|------------------------------------|---------|
+| host             | string              | -                                  | -       |
+| topicId          | string              | 日志主题                               | -       |
+| time             | number (optional)   | 发送时间阈值                             | 10s     |
+| count            | number (optional)   | 发送条数阈值                             | 10      |
+| source           | string (optional)   | 日志来源                               | -       |
+| onPutlogsError   | function (optional) | 上传异常回调                             | -       |
+| platform         | string              | 小程序平台: 抖音小程序: tt 快应用： quick-app ｜- |
+| platform_request | function            | 小程序平台 request 方法                   |         |
 
 
 ## CLS Host
@@ -27,8 +29,9 @@ endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product
 
 ## Example
 
+### 抖音平台
 ```
-import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-quickapp'
+import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-miniapp'
 
  let clsTracker = new WebTracker({
       host: "[域名: http://ap-guangzhou-open.cls.tencentcs.com"],
@@ -36,6 +39,35 @@ import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-quickapp'
       time: 10,
       count: 20,
       source: "127.0.0.1",
+      platform: "tt",
+      platform_request: tt.request,
+      onPutlogsError: function(res) {
+           console.log(res)
+      } 
+  })
+  let log = new Log(Date.now())
+  log.addContent("hello", "hello world中文")
+  log.addContent("world", "你好，我来自深圳|hello world2")
+  clsTracker.send(log)   
+```
+
+
+### 快应用平台
+```
+import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-miniapp'
+import requesttask from '@system.requesttask'
+
+ let clsTracker = new WebTracker({
+      host: "[域名: http://ap-guangzhou-open.cls.tencentcs.com"],
+      topicId: "【topicId】",
+      time: 10,
+      count: 20,
+      source: "127.0.0.1",
+      platform: "quick-app",
+      platform_request:requesttask.request,
+      onPutlogsError: function(res) {
+           console.log(res)
+      } 
   })
   let log = new Log(Date.now())
   log.addContent("hello", "hello world中文")

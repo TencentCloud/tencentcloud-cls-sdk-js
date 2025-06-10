@@ -82,7 +82,7 @@ export class WebTracker {
     }
 
 
-    private doTTPlatformSend() {
+    private doCommonPlatformSend() {
         let source="";
         if (this.opt.source != undefined) {
             source = this.opt.source;
@@ -124,7 +124,11 @@ export class WebTracker {
             if (this.opt.platform == "quick-app") {
                 this.doQuickAppPlatformSend();
             } else if (this.opt.platform == "tt") {
-                this.doTTPlatformSend();
+                this.doCommonPlatformSend();
+            } else if (this.opt.platform == "alipay") {
+                this.doCommonPlatformSend();
+            } else {
+                this.doCommonPlatformSend();
             }
             // 处理真实发送
             if (this.timer != null) {
