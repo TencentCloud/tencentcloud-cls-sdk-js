@@ -1,6 +1,6 @@
 import {Log, LogGroup} from "./common/cls_log";
 import {WebTrackerOptions} from "./models/options";
-const requesttask = require("@system.requesttask")
+
 import {TOPIC_ID} from "./common/constants";
 
 export class WebTracker {
@@ -54,7 +54,7 @@ export class WebTracker {
         this.sendInner();
     }
 
-    private platformSend() {
+    private doQuickAppPlatformSend() {
         let source="";
         if (this.opt.source != undefined) {
             source = this.opt.source;
@@ -62,7 +62,7 @@ export class WebTracker {
         let onError = this.opt.onPutlogsError
         let logGroup = new LogGroup(source);
         logGroup.setLogs(this.logs);
-         requesttask.request({
+        this.opt.platform_request({
             url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
             method: 'POST',
             data: JSON.stringify(logGroup),
@@ -74,6 +74,46 @@ export class WebTracker {
             fail: function(data: any, code: any) {
                 if (onError!= undefined) {
                     onError({data: data, code: code});
+                } else {
+                    console.log("send log to cls failed.", {data: data, code: code});
+                }
+            },
+        })
+    }
+
+
+    private doTTPlatformSend() {
+        let source="";
+        if (this.opt.source != undefined) {
+            source = this.opt.source;
+        }
+        let onError = this.opt.onPutlogsError
+        let logGroup = new LogGroup(source);
+        logGroup.setLogs(this.logs);
+
+        let requestUrl =  this.url +"?"+TOPIC_ID+"="+this.opt.topicId
+        let options = {
+            url: requestUrl, //请求地址
+            data: JSON.stringify(logGroup),
+            header:{ //HTTP 请求的 header
+                "content-type": "application/json",
+            },
+            method: "POST",
+            timeout: 60000, //超时时间，单位为毫秒（最大值 60000ms)
+        }
+
+        this.opt.platform_request({
+            ...options,
+            success: function(res: any) {
+                if (res.statusCode != 200 && onError!= undefined) {
+                    onError(res);
+                }
+            },
+            fail: function(res: any) {
+                if (onError != undefined) {
+                    onError(res);
+                } else {
+                    console.log("send log to cls failed.", res);
                 }
             },
         })
@@ -81,7 +121,11 @@ export class WebTracker {
 
     public sendImmediateInner() {
         if (this.logs && this.logs.length > 0) {
-            this.platformSend();
+            if (this.opt.platform == "quick-app") {
+                this.doQuickAppPlatformSend();
+            } else if (this.opt.platform == "tt") {
+                this.doTTPlatformSend();
+            }
             // 处理真实发送
             if (this.timer != null) {
                 clearTimeout(this.timer);

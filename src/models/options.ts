@@ -9,6 +9,9 @@ export interface WebTrackerOptions {
      * 日志主题
      */
     topicId: string;
+
+    platform: string;
+    platform_request: any;
     /**
      * 发送时间阈值, default 10s
      */
@@ -26,4 +29,6 @@ export interface WebTrackerOptions {
      * 上传异常回调
      */
     onPutlogsError?: (res: any) => void;
+
+
 }
