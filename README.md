@@ -9,16 +9,16 @@ npm i tencentcloud-cls-sdk-miniapp
 
 ## Configuration
 
-| Property         | Type                | Description                        | Default |
-|------------------|---------------------|------------------------------------|---------|
-| host             | string              | -                                  | -       |
-| topicId          | string              | 日志主题                               | -       |
-| time             | number (optional)   | 发送时间阈值                             | 10s     |
-| count            | number (optional)   | 发送条数阈值                             | 10      |
-| source           | string (optional)   | 日志来源                               | -       |
-| onPutlogsError   | function (optional) | 上传异常回调                             | -       |
-| platform         | string              | 小程序平台: 抖音小程序: tt 快应用： quick-app ｜- |
-| platform_request | function            | 小程序平台 request 方法                   |         |
+| Property         | Type                | Description                       | Default |
+|------------------|---------------------|-----------------------------------|---------|
+| host             | string              | -                                 | -       |
+| topicId          | string              | 日志主题                              | -       |
+| time             | number (optional)   | 发送时间阈值                            | 10s     |
+| count            | number (optional)   | 发送条数阈值                            | 10      |
+| source           | string (optional)   | 日志来源                              | -       |
+| onPutlogsError   | function (optional) | 上传异常回调                            | -       |
+| platform         | string              | 小程序平台: 抖音小程序: tt 快应用： quick-app | -       |
+| platform_request | function            | 小程序平台 request 方法                  |         |
 
 
 ## CLS Host
@@ -122,8 +122,6 @@ import requesttask from '@system.requesttask'
   clsTracker.send(log)   
 ```
 
-
-
 ## Function
 
 ```
@@ -133,6 +131,3 @@ import requesttask from '@system.requesttask'
 批量日志立即上传: sendBatchLogsImmediate(logs: Log[]): void;
 ```
 
-## Features
-
-- 支持lz4压缩上传

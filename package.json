@@ -1,7 +1,7 @@
 {
   "name": "tencentcloud-cls-sdk-miniapp",
-  "version": "1.0.2",
-  "description": "TencentCloud CLS Javascript web SDK",
+  "version": "1.0.3",
+  "description": "TencentCloud CLS Javascript MINI APP SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
