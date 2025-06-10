@@ -4,7 +4,7 @@
 
 ## Install
 ```
-npm i tencentcloud-cls-sdk-quickapp
+npm i tencentcloud-cls-sdk-miniapp
 ```
 
 ## Configuration
@@ -74,6 +74,55 @@ import requesttask from '@system.requesttask'
   log.addContent("world", "你好，我来自深圳|hello world2")
   clsTracker.send(log)   
 ```
+
+### 支付宝小程序平台
+```
+import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-miniapp'
+import requesttask from '@system.requesttask'
+
+ let clsTracker = new WebTracker({
+      host: "[域名: http://ap-guangzhou-open.cls.tencentcs.com"],
+      topicId: "【topicId】",
+      time: 10,
+      count: 20,
+      source: "127.0.0.1",
+      platform: "alipay",
+      platform_request:my.request,
+      onPutlogsError: function(res) {
+           console.log(res)
+      } 
+  })
+  let log = new Log(Date.now())
+  log.addContent("hello", "hello world中文")
+  log.addContent("world", "你好，我来自深圳|hello world2")
+  clsTracker.send(log)   
+```
+
+### 钉钉小程序
+
+```
+import {Log, WebTracker, WebTrackerOptions} from 'tencentcloud-cls-sdk-miniapp'
+import requesttask from '@system.requesttask'
+
+ let clsTracker = new WebTracker({
+      host: "[域名: http://ap-guangzhou-open.cls.tencentcs.com"],
+      topicId: "【topicId】",
+      time: 10,
+      count: 20,
+      source: "127.0.0.1",
+      platform: "dd",
+      platform_request:dd.httpRequest,
+      onPutlogsError: function(res) {
+           console.log(res)
+      } 
+  })
+  let log = new Log(Date.now())
+  log.addContent("hello", "hello world中文")
+  log.addContent("world", "你好，我来自深圳|hello world2")
+  clsTracker.send(log)   
+```
+
+
 
 ## Function
 

@@ -127,6 +127,8 @@ export class WebTracker {
                 this.doCommonPlatformSend();
             } else if (this.opt.platform == "alipay") {
                 this.doCommonPlatformSend();
+            } else if (this.opt.platform == "dd") {
+                this.doCommonPlatformSend();
             } else {
                 this.doCommonPlatformSend();
             }
