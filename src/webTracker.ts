@@ -1,21 +1,23 @@
 import {Log, LogGroup} from "./common/cls_log";
 import {WebTrackerOptions} from "./models/options";
-const requesttask = require("@system.requesttask")
+const nativeFetch = require('@system.fetch')
+// const storage = require("@system.storage")
+
 import {TOPIC_ID} from "./common/constants";
 
 export class WebTracker {
-    private timer: any;
     private time: number;
     private count: number;
-    private logs: Log[];
     private url: string;
     private opt: WebTrackerOptions;
+    private mem: any;
+    private dataHasSend: boolean = true;
+    // private syncStorage: boolean = false;
+    // private dataHasChange: boolean = false;
 
     constructor(opt: WebTrackerOptions) {
-        this.timer = null;
         this.time = 10;
-        this.count = 10;
-        this.logs = [];
+        this.count = 100;
         if (opt.time != null) {
             this.time = opt.time;
         }
@@ -28,41 +30,32 @@ export class WebTracker {
             this.url = "https://" + opt.host + "/tracklog";
         }
         this.opt = opt;
-    }
-
-    private sendInner() {
-        if (this.timer != null) {
-            if (this.logs.length >= this.count) {
-                clearTimeout(this.timer);
-                this.timer = null;
-                this.sendImmediateInner();
-            }
-        } else {
-            const that = this;
-            if (this.logs.length >= this.count || this.time <= 0) {
-                this.sendImmediateInner();
-            } else {
-                this.timer = setTimeout(function () {
-                    that.sendImmediateInner();
-                }, this.time * 1e3);
-            }
+        // 内存数据队列（用于批量发送）
+        this.mem = {
+            mdata: [],
+            getLength: function() {
+                return this.mdata.length;
+            },
+            add: function(data: any) {
+                this.mdata.push(data);
+            },
+            clear: function(count: any) {
+                this.mdata.splice(0, count);
+            },
         }
+        this.batchInterval();
     }
 
-    public send(log: Log) {
-        this.logs.push(log);
-        this.sendInner();
-    }
-
-    private platformSend() {
+    private platformSend(logs: Log[]) {
         let source="";
         if (this.opt.source != undefined) {
             source = this.opt.source;
         }
         let onError = this.opt.onPutlogsError
         let logGroup = new LogGroup(source);
-        logGroup.setLogs(this.logs);
-         requesttask.request({
+        logGroup.setLogs(logs);
+
+        nativeFetch.fetch({
             url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
             method: 'POST',
             data: JSON.stringify(logGroup),
@@ -79,31 +72,95 @@ export class WebTracker {
         })
     }
 
-    public sendImmediateInner() {
-        if (this.logs && this.logs.length > 0) {
-            this.platformSend();
-            // 处理真实发送
-            if (this.timer != null) {
-                clearTimeout(this.timer);
-                this.timer = null;
+    private batchInterval() {
+        let i = this;
+        // 启动数据发送定时任务（支持失败重试机制）
+        (function startSendScheduler() {
+            setTimeout(function() {
+                    i.batchSend(); // 执行批量发送
+                    startSendScheduler(); // 递归调用自身，实现循环
+                },
+               i.time * 1000);
+        })();
+
+        // 启动数据写入定时任务（固定间隔）
+        // (function startWriteScheduler() {
+        //     setTimeout(function() {
+        //             i.batchWrite(); // 执行批量写入
+        //             startWriteScheduler(); // 递归调用自身，实现循环
+        //         },
+        //         500) // 固定500毫秒间隔
+        // })();
+    }
+
+    // private batchWrite() {
+    //     if (this.syncStorage && this.dataHasChange) {
+    //         let t = this;
+    //         storage.set({
+    //             key: "cls_sdk_prepare_data",
+    //             value: this.mem.mdata,
+    //             success: function () {
+    //                 t.dataHasChange = !1
+    //             }
+    //         })
+    //     }
+    // }
+
+    private batchSend() {
+        if (this.dataHasSend) {
+            const memoryData = this.mem.mdata;
+            let dataToSend = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
+            let dataCount = dataToSend.length;
+            this.dataHasSend = false;
+            let source="";
+            if (this.opt.source != undefined) {
+                source = this.opt.source;
             }
-            this.logs = [];
+            let onError = this.opt.onPutlogsError
+            let logGroup = new LogGroup(source);
+            logGroup.setLogs(dataToSend);
+            let i = this;
+            nativeFetch.fetch({
+                url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
+                method: 'POST',
+                data: JSON.stringify(logGroup),
+                success: function(res: any) {
+                    i.dataHasSend = true;
+                    if (res.statusCode != 200 && onError!= undefined) {
+                        onError(res);
+                    }
+
+                    if (res.statusCode == 200 || res.statusCode == 401 || res.statusCode == 413 || res.statusCode == 403 || res.statusCode == 400) {
+                        i.mem.clear(dataCount)
+                        // i.dataHasChange = true
+                        // i.batchWrite()
+                    }
+                },
+                fail: function(data: any, code: any) {
+                    i.dataHasSend = true;
+                    if (onError!= undefined) {
+                        onError({data: data, code: code});
+                    }
+                },
+            })
+        }
+    }
+
+    public send(log: Log) {
+        if (this.mem.getLength() >= 500) {
+            this.mem.mdata.shift()
+        }
+        this.mem.add(log)
+        // this.dataHasChange = true;
+        if (this.mem.getLength() >= this.count) {
+            this.batchSend()
         }
     }
 
     public sendImmediate(log: Log) {
-        this.logs.push(log);
-        this.sendImmediateInner();
-    }
-
-    public sendBatchLogs(logs: Log[]) {
-        this.logs.push(...logs);
-        this.sendInner();
-    }
-
-    public sendBatchLogsImmediate(logs: Log[]) {
-        this.logs.push(...logs);
-        this.sendImmediateInner();
+        let logs = [];
+        logs.push(log);
+        this.platformSend(logs)
     }
 
     public getOpts(): WebTrackerOptions {

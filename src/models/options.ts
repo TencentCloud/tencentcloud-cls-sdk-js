@@ -26,4 +26,10 @@ export interface WebTrackerOptions {
      * 上传异常回调
      */
     onPutlogsError?: (res: any) => void;
+
+    maxMemoryItems?: number;
+    persistInterval?: number;
+    sendTimeout?: number;
+    maxSendItems?: number;
+    retryBaseTimeout?: number;
 }
