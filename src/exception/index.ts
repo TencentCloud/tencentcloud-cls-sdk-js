@@ -5,48 +5,36 @@ export default class TencentCloudClsSDKException extends Error {
   /**
    * 请求id
    */
-  requestId: string
+  requestId: string;
 
   /**
    * http状态码
    */
-  httpCode?: number
+  httpCode?: number;
 
   /**
    * 接口返回状态码
    */
-  code?: string
+  code?: string;
 
-  constructor(error: string, requestId = "") {
-    super(error)
-    this.requestId = requestId || ""
+  constructor(error: string, requestId = '') {
+    super(error);
+    this.requestId = requestId || '';
   }
 
   getMessage(): string {
-    return this.message
+    return this.message;
   }
 
   getRequestId(): string {
-    return this.requestId
+    return this.requestId;
   }
 
   toString(): string {
-    return (
-      "[TencentCloudSDKException]" +
-      "message:" +
-      this.getMessage() +
-      "  requestId:" +
-      this.getRequestId()
-    )
+    return `[TencentCloudSDKException]` + `message:${this.getMessage()}  requestId:${this.getRequestId()}`;
   }
 
   toLocaleString(): string {
-    return (
-      "[TencentCloudSDKException]" +
-      "message:" +
-      this.getMessage() +
-      "  requestId:" +
-      this.getRequestId()
-    )
+    return `[TencentCloudSDKException]` + `message:${this.getMessage()}  requestId:${this.getRequestId()}`;
   }
 }

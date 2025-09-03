@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es5",
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "commonjs"
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "vite.config.mts",
+    "src/dev.ts",
+    "**/*.test.ts"
+  ]
+}
