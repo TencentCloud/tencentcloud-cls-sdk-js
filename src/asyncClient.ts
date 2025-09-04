@@ -121,15 +121,15 @@ export class AsyncClient {
         let i = this;
         // 启动数据发送定时任务（支持失败重试机制）
         (function startSendScheduler() {
-            setTimeout(function() {
-                    i.batchSend(); // 执行批量发送
+            setTimeout(async function() {
+                    await i.batchSend(); // 执行批量发送
                     startSendScheduler(); // 递归调用自身，实现循环
                 },
                 i.time * 1000);
         })();
     }
 
-    private batchSend() {
+    private async batchSend() {
         if (this.dataHasSend && this.mem.mdata.length > 0) {
             const memoryData = this.mem.mdata;
             let dataToSend: LogItem[] = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
@@ -148,7 +148,7 @@ export class AsyncClient {
                 dataSendLengthCount+=1;
                 logGroup.addLogs(log)
             }
-            let message = this.putLogs(headParameter, urlParameter, logGroup.encode())
+            let message = await this.putLogs(urlParameter, headParameter,logGroup.encode())
             if (message.status == 200 || message.status  == 401 || message.status  == 413 || message.status  == 403 || message.status  == 400) {
                 this.mem.clear(dataSendLengthCount)
             }
@@ -159,25 +159,24 @@ export class AsyncClient {
         }
     }
 
-    public calcLogLength(log: LogItem): number {
+    private calcLogLength(log: LogItem): number {
         let l= log.getLog().time.toString().length
         for (let i = 0; i < log.getLog().contents.length; i++) {
-            if (log.getLog().contents[i].key==null) {
+            let key = log.getLog().contents[i].key
+            let value  = log.getLog().contents[i].value
+            if (key === null || key === undefined) {
                 throw new TencentCloudClsSDKException(-1, "content key must be empty")
-            } else {
-                l = l + log.getLog().contents[i].key?.length
             }
-            if (log.getLog().contents[i].value==null) {
+            if (value === null || value === undefined) {
                 throw new TencentCloudClsSDKException(-1, "content key must be empty")
-            } else {
-                l = l + log.getLog().contents[i].value?.length
             }
+            l += key.length + value.length
         }
        return l
     }
 
 
-    public send(log: LogItem) {
+    public async send(log: LogItem) {
         if (this.mem.getLength() >= 500) {
             this.mem.mdata.shift()
         }
@@ -185,11 +184,11 @@ export class AsyncClient {
         log.setLength(len)
         this.mem.add(log)
         if (this.mem.getLength() >= this.count) {
-            this.batchSend()
+            await this.batchSend()
         }
     }
 
-    public sendImmediate(logs: LogItem[]): void {
+    public async sendImmediate(logs: LogItem[]): Promise<void> {
         let logGroup = new LogGroup()
         logGroup.setSource(this.sourceIp);
         for (let i = 0; i < logs.length; i++) {
@@ -199,7 +198,7 @@ export class AsyncClient {
         if (body.length > CONST_MAX_PUT_SIZE) {
             throw new TencentCloudClsSDKException(-1, `InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${body.length}, topic=${this.topic}`);
         }
-        let message = this.putLogs(this.getCommonHeadPara(CONST_PROTO_BUF), this.getCommonUrlPara(), body)
+        let message = await this.putLogs(this.getCommonUrlPara(), this.getCommonHeadPara(CONST_PROTO_BUF), body)
         if (message.status!=200) {
             throw new TencentCloudClsSDKException(message.status, message.message, message.requestId)
         }
@@ -215,29 +214,31 @@ export class AsyncClient {
      * @param headParameter
      * @param body
      */
-    public putLogs(urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array):ClsMessage {
+    private async putLogs(urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): Promise<ClsMessage> {
         let message: ClsMessage= {status:0, message: "", requestId: ""};
-        this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, body)
-            .then((response:any) => {
-                if (response) {
-                    message.status = response.statusCode;
-                    message.message = response.body;
-                    message.requestId = "";
-                } else {
-                    message.status = 0;
-                    message.message = "internal error";
-                }
-            })
-            .catch((error: any) => {
-                if (error.response) {
-                    message.status = error.response.status;
-                    message.message = error.response.data;
-                    message.requestId = "";
-                } else {
-                    message.status = 0;
-                    message.message = error.message;
-                }
-            })
+        try {
+            let response= await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, body)
+            console.log(response)
+            if (response) {
+                message.status = response.status;
+                message.message = response.data;
+                message.requestId = response.headers["x-cls-requestid"];
+            } else {
+                message.status = 0;
+                message.message = "internal error";
+            }
+        }catch(error) {
+            if (error.response) {
+                message.status = error.response.status;
+                message.message = error.response.data;
+                message.requestId = error.response.headers["x-cls-requestid"];
+            } else {
+                message.status = 0;
+                message.message = error.toString();
+            }
+        }
+
+        console.log(message)
 
         return message
     }
@@ -251,7 +252,7 @@ export class AsyncClient {
      * @param body 
      * @returns 
      */
-    private sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): any {
+    private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): Promise<any> {
         headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
         let signature_str: string = signature(
             this.credential.secretId,
@@ -269,7 +270,7 @@ export class AsyncClient {
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+this.topic,
             method: "post",
             data: body,
-            timeout: this.sendTimeout,
+            timeout: this.sendTimeout*1000,
             headers,
         });
     }

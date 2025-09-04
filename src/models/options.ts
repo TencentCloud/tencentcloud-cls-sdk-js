@@ -17,7 +17,7 @@ export interface AsyncClientOptions {
     /**
      * client ip
      */
-    sourceIp: string;
+    sourceIp?: string;
     /**
      * Request timeout in seconds, default 60s
      * @type {number}
