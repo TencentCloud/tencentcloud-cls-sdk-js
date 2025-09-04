@@ -1,73 +1,43 @@
-import { AsyncClientOptions } from './models';
-import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING } from './common/constants';
-import { PutLogsRequest } from './request/putLogsRequest';
+import { AsyncClientOptions, Credential } from './models';
+import TencentCloudClsSDKException from './exception'
+import {
+    CONST_CONTENT_LENGTH,
+    CONST_CONTENT_TYPE,
+    CONST_HOST,
+    CONST_PROTO_BUF,
+    CONST_MAX_PUT_SIZE,
+    TOPIC_ID,
+    CONST_HTTP_METHOD_POST,
+    UPLOAD_LOG_RESOURCE_URI,
+    CONST_AUTHORIZATION,
+    HTTP_SEND_TIME_OUT
+} from './common/constants';
 import { signature } from "./common/sign";
 import * as axios from "axios"
-import { Response } from './response/response';
-import { SearchLogRequest } from './request/searchResquest';
+import {LogGroup, LogItem} from "./common/log";
 
 export class AsyncClient {
-    /**
-     * httpType http type
-     */
+    private topic: string;
     private httpType: string;
-    /**
-     * HostName hostname
-     */
     private hostName: string;
-    /**
-     * 腾讯云账户secretId
-     */
-    private secretId: string;
-    /**
-     * 腾讯云账户secretKey
-     */
-    private secretKey: string;
-    /**
-     * sourceIp 来源ip
-     */
-    private sourceIp: string;
-    /**
-     * retry_times 上传失败重试次数
-     */
-    private retry_times: number;
-    /**
-     * 是否开启压缩上传
-     * @param compress 
-     */
-    //  private compress: boolean = false;
-
-    private secretToken: string;
-
+    private credential: Credential;
+    private sendTimeout: number = HTTP_SEND_TIME_OUT;
+    private sourceIp: string = "";
+    private time: number = 10;
+    private count: number = 10;
+    private mem: any;
+    private dataHasSend: boolean = true;
+    private onSendLogsError?: (res: any) => void;
 
     constructor(options: AsyncClientOptions) { 
         // 参数校验
-        if (options == null || options == undefined) {
-            throw new TencentCloudClsSDKException("AsyncClientOptions invalid")
+        if (options == null) {
+            throw new TencentCloudClsSDKException(-1, "AsyncClientOptions invalid")
         }
-
-        if (options.endpoint == null || options.endpoint == undefined || options.endpoint.length == 0) {
-            throw new TencentCloudClsSDKException("options endpoint can not be empty")
+        // 校验域名
+        if (options.endpoint == null) {
+            throw new TencentCloudClsSDKException(-1, "options endpoint can not be empty")
         }
-
-        if (options.secretId == null || options.secretId == undefined || options.secretId.length == 0) {
-            throw new TencentCloudClsSDKException("options secretId can not be empty")
-        }
-
-        if (options.secretKey == null || options.secretKey == undefined || options.secretKey.length == 0) {
-            throw new TencentCloudClsSDKException("options secretKey can not be empty")
-        }
-
-        if (options.sourceIp == null || options.sourceIp == undefined || options.sourceIp.length == 0) {
-            throw new TencentCloudClsSDKException("options sourceIp can not be empty")
-        }
-
-        this.retry_times = options.retry_times;
-        if (options.retry_times == 0 || options.retry_times == undefined || options.retry_times == null) {
-            this.retry_times = 5;
-        }
-
         if (options.endpoint.startsWith("http://")) {
             this.hostName = options.endpoint.substring(7);
             this.httpType = "http://";
@@ -78,149 +48,198 @@ export class AsyncClient {
             this.hostName = options.endpoint;
             this.httpType = "http://";
         }
-        
         while (this.hostName.endsWith("/")) {
             this.hostName = this.hostName.substring(0, this.hostName.length - 1);
         }
-
-        if (options.compress) {
-            // this.compress = options.compress;
+        // 校验鉴权信息
+        if (options.credential == null) {
+            throw new TencentCloudClsSDKException(-1, "credential must be a valid credential")
         }
-
-        this.secretId = options.secretId;
-        this.secretKey = options.secretKey;
-        this.sourceIp = options.sourceIp;
-
-        // 赋值给内部变量secretToken
-        if (options.secretToken == null || options.secretToken == undefined) {
-            this.secretToken = "";
+        if (options.credential.secretId == null || options.credential.secretId.length == 0) {
+            throw new TencentCloudClsSDKException(-1, "credential secretId can not be empty")
+        }
+        if (options.credential.secretKey == null || options.credential.secretKey.length == 0) {
+            throw new TencentCloudClsSDKException(-1, "credential secretKey can not be empty")
+        }
+        this.credential = options.credential;
+        // 校验topic是否存在
+        if (options.topic_id == null || options.topic_id.length == 0) {
+            throw new TencentCloudClsSDKException(-1, "topic_id must be empty")
+        }
+        this.topic = options.topic_id
+        // 校验发送超时时间
+        if (options.sendTimeout == null || options.sendTimeout<=0) {
+            this.sendTimeout = 60;
         } else {
-            this.secretToken = options.secretToken;
+            this.sendTimeout = options.sendTimeout;
+        }
+        // 校验异步聚合
+        if (options.count != null && options.count > 0) {
+            this.count = options.count;
+        }
+        if (options.time != null && options.time > 0) {
+            this.time = options.time;
+        }
+        if (options.sourceIp != null && options.sourceIp.length > 0) {
+            this.sourceIp = options.sourceIp;
+        }
+        // 异步发送回掉函数
+        if (options.onSendLogsError != null) {
+            this.onSendLogsError = options.onSendLogsError;
+        }
+
+        // 内存队列
+        this.mem = {
+            mdata: [],
+            getLength: function() {
+                return this.mdata.length;
+            },
+            add: function(data: any) {
+                this.mdata.push(data);
+            },
+            clear: function(count: any) {
+                this.mdata.splice(0, count);
+            },
+        }
+        this.batchInterval();
+    }
+
+    public resetSecretToken(credential: Credential): void {
+        if (credential == null) {
+            throw new TencentCloudClsSDKException(-1, "credential must be a valid credential")
+        }
+        if (credential.secretId == null || credential.secretId.length == 0) {
+            throw new TencentCloudClsSDKException(-1, "credential secretId can not be empty")
+        }
+        if (credential.secretKey == null || credential.secretKey.length == 0) {
+            throw new TencentCloudClsSDKException(-1, "credential secretKey can not be empty")
+        }
+        this.credential = credential
+    }
+
+    private batchInterval() {
+        let i = this;
+        // 启动数据发送定时任务（支持失败重试机制）
+        (function startSendScheduler() {
+            setTimeout(function() {
+                    i.batchSend(); // 执行批量发送
+                    startSendScheduler(); // 递归调用自身，实现循环
+                },
+                i.time * 1000);
+        })();
+    }
+
+    private batchSend() {
+        if (this.dataHasSend && this.mem.mdata.length > 0) {
+            const memoryData = this.mem.mdata;
+            let dataToSend: LogItem[] = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
+            this.dataHasSend = false
+            let logGroup = new LogGroup()
+            logGroup.setSource(this.sourceIp)
+            let dataSendLengthSize = 0
+            let dataSendLengthCount = 0
+            let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
+            let urlParameter = this.getCommonUrlPara()
+            for (let i = 0; i < memoryData.length; i++) {
+                let log = dataToSend[i]
+                if (dataSendLengthSize>=3*1024*1024) {
+                   break
+                }
+                dataSendLengthCount+=1;
+                logGroup.addLogs(log)
+            }
+            let message = this.putLogs(headParameter, urlParameter, logGroup.encode())
+            if (message.status == 200 || message.status  == 401 || message.status  == 413 || message.status  == 403 || message.status  == 400) {
+                this.mem.clear(dataSendLengthCount)
+            }
+            if (this.onSendLogsError!=null) {
+                this.onSendLogsError(message)
+            }
+            this.dataHasSend = true;
         }
     }
 
-    public ResetSecretToken(secretId: string, secretKey: string, secretToken: string) {
-        if (secretId.length == 0 || secretKey.length == 0 || secretToken.length == 0) {
-            throw new TencentCloudClsSDKException("invalid param. param cannot be empty");
+    public calcLogLength(log: LogItem): number {
+        let l= log.getLog().time.toString().length
+        for (let i = 0; i < log.getLog().contents.length; i++) {
+            if (log.getLog().contents[i].key==null) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            } else {
+                l = l + log.getLog().contents[i].key?.length
+            }
+            if (log.getLog().contents[i].value==null) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            } else {
+                l = l + log.getLog().contents[i].value?.length
+            }
         }
-
-        this.secretToken = secretToken;
-        this.secretId    = secretId;
-        this.secretKey   = secretKey;
+       return l
     }
+
+
+    public send(log: LogItem) {
+        if (this.mem.getLength() >= 500) {
+            this.mem.mdata.shift()
+        }
+        let len = this.calcLogLength(log)
+        log.setLength(len)
+        this.mem.add(log)
+        if (this.mem.getLength() >= this.count) {
+            this.batchSend()
+        }
+    }
+
+    public sendImmediate(logs: LogItem[]): void {
+        let logGroup = new LogGroup()
+        logGroup.setSource(this.sourceIp);
+        for (let i = 0; i < logs.length; i++) {
+            logGroup.addLogs(logs[i])
+        }
+        let body = logGroup.encode()
+        if (body.length > CONST_MAX_PUT_SIZE) {
+            throw new TencentCloudClsSDKException(-1, `InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${body.length}, topic=${this.topic}`);
+        }
+        let message = this.putLogs(this.getCommonHeadPara(CONST_PROTO_BUF), this.getCommonUrlPara(), body)
+        if (message.status!=200) {
+            throw new TencentCloudClsSDKException(message.status, message.message, message.requestId)
+        }
+        return
+    }
+
+
 
     /**
      * PutLogs
-     * @param request 
-     * @returns 
+     * @returns
+     * @param urlParameter
+     * @param headParameter
+     * @param body
      */
-    public async PutLogs(request: PutLogsRequest): Promise<any> {
-        let logBytes = request.getLogGroupBytes(this.sourceIp);
-        if (logBytes.length > CONST_MAX_PUT_SIZE) {
-            throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
-        }
-      
-        let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
-        request.setParam(TOPIC_ID, request.getTopic());
-        let urlParameter = request.getAllParams();
-
-        for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
-            try {
-                let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes, request.getTopic());
-                let putLogRequest = new Response();
-                putLogRequest.setAllHeaders(res.headers);
-                putLogRequest.setHttpStatusCode(res.status);
-                if (putLogRequest.getHttpStatusCode()==200) {
-                    return putLogRequest;
+    public putLogs(urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array):ClsMessage {
+        let message: ClsMessage= {status:0, message: "", requestId: ""};
+        this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, body)
+            .then((response:any) => {
+                if (response) {
+                    message.status = response.statusCode;
+                    message.message = response.body;
+                    message.requestId = "";
+                } else {
+                    message.status = 0;
+                    message.message = "internal error";
                 }
-                if (retryTimes+1 >= this.retry_times) { 
-                    throw new TencentCloudClsSDKException("send log failed and exceed retry times");
+            })
+            .catch((error: any) => {
+                if (error.response) {
+                    message.status = error.response.status;
+                    message.message = error.response.data;
+                    message.requestId = "";
+                } else {
+                    message.status = 0;
+                    message.message = error.message;
                 }
-            } catch (error) {
-                if (error.response && error.response.status==413) {
-                    let putLogRequest = new Response();
-                    putLogRequest.setAllHeaders(error.response.headers);
-                    putLogRequest.setHttpStatusCode(error.response.status);
-                    return putLogRequest;
-                }
-                if (retryTimes+1 >= this.retry_times) { 
-                    let putLogRequest = new Response();
-                    if (error.response) {
-                        putLogRequest.setAllHeaders(error.response.headers);
-                        putLogRequest.setHttpStatusCode(error.response.status);
-                    }
-                    throw new TencentCloudClsSDKException(`send log failed and exceed retry times. error: ${error.message}. request： ${JSON.stringify(putLogRequest)}`);
-                }   
-            }
-        }        
-    }
+            })
 
-
-    /**
-     * SearchLog
-     */    
-    public async SearchLog(request: SearchLogRequest): Promise<any> {
-        if (request.LogsetId == null || request.LogsetId == undefined || request.LogsetId.length == 0) {
-            throw new TencentCloudClsSDKException("logset_id can not be empty")
-        }
-
-        if (request.TopicId == null || request.TopicId == undefined || request.TopicId.length == 0) {
-            throw new TencentCloudClsSDKException("topic_id can not be empty")
-        }
-
-        if (request.StartTime == null || request.StartTime == undefined || request.StartTime.length == 0) {
-            throw new TencentCloudClsSDKException("start_time can not be empty")
-        }
-
-        if (request.EndTime == null || request.EndTime == undefined || request.EndTime.length == 0) {
-            throw new TencentCloudClsSDKException("end_time can not be empty")
-        }
-
-        if (request.Limit == null || request.Limit == undefined || request.Limit.length == 0 || parseInt(request.Limit, 10) > 100) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        if (request.Sort != "asc" && request.Sort != "desc" ) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        let urlParameter = request.getAllParams();
-        urlParameter.set(TOPIC_IDS, request.TopicId);
-        urlParameter.set(LOGSET_ID, request.LogsetId);
-        urlParameter.set(START_TIME, request.StartTime);
-        urlParameter.set(END_TIME, request.EndTime);
-        urlParameter.set(LIMIT, request.Limit);
-        urlParameter.set(QUERY_STRING, request.QueryString)
-        if (request.Context != null && request.Context != undefined && request.Context.length > 0) {
-            urlParameter.set(CONTEXT, request.Context);
-        }
-        urlParameter.set(SORT, request.Sort);
-
-        let headParameter = this.getCommonHeadPara(CONST_JSON);
-        headParameter.delete(CONST_CONTENT_LENGTH)
-        let signature_str: string = signature(this.secretId, this.secretKey, CONST_HTTP_METHOD_GET, "/searchlog", new Map(), headParameter, 300000);
-        headParameter.set(CONST_AUTHORIZATION, signature_str);
-
-        let headers: {[key: string]: string} = {};
-        headParameter.forEach((value , key) =>{
-            headers[key] = value;
-        });
-        
-        if (this.secretToken.length > 0) {
-            headers["X-Cls-Token"] = this.secretToken;
-        }
-
-        let uri = ""
-        urlParameter.forEach((value , key) =>{
-            uri+= key+"="+encodeURIComponent(value)+"&";
-        });
-        uri = uri.substring(0, uri.length-1)
-    
-        return axios.default({
-            url: this.httpType+this.hostName+"/searchlog"+"?"+uri,
-            method: "get",
-            headers,
-        });
+        return message
     }
 
     /**
@@ -232,21 +251,25 @@ export class AsyncClient {
      * @param body 
      * @returns 
      */
-    private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
+    private sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): any {
         headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
-        let signature_str: string = signature(this.secretId, this.secretKey, method, resourceUri, urlParameter, headParameter, 300000);
+        let signature_str: string = signature(
+            this.credential.secretId,
+            this.credential.secretKey,
+            method, resourceUri, urlParameter, headParameter, 300000);
         headParameter.set(CONST_AUTHORIZATION, signature_str);
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
              headers[key] = value;
         });
-        if (this.secretToken.length > 0) {
-            headers["X-Cls-Token"] = this.secretToken;
+        if (this.credential.token!=null && this.credential.token.length>0) {
+            headers["X-Cls-Token"] = this.credential.token;
         }
         return axios.default({
-            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
+            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+this.topic,
             method: "post",
             data: body,
+            timeout: this.sendTimeout,
             headers,
         });
     }
@@ -263,5 +286,26 @@ export class AsyncClient {
         headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }
+
+    /**
+     * GetCommonHeadPara
+     * 获取common headers
+     * @returns Map<string, string>
+     */
+    private getCommonUrlPara(): Map<string, string>{
+        let headParameter: Map<string, string> = new Map();
+        headParameter.set(TOPIC_ID, this.topic);
+        return headParameter;
+    }
+}
+
+
+/**
+ * Credential information class
+ */
+export interface ClsMessage {
+    status: number;
+    requestId: string;
+    message: string;
 }
 

@@ -84,6 +84,7 @@ export class LogGroup {
 
 export class LogItem {
     public mContents: cls.Log;
+    public logLength: number;
 
     constructor() {
         this.mContents = new cls.Log();
@@ -111,6 +112,14 @@ export class LogItem {
      */
     public getLog(): cls.Log {
         return this.mContents;
+    }
+
+    public setLength(length: number) {
+        this.logLength = length;
+    }
+
+    public getLength(): number {
+        return this.logLength;
     }
 
 }

@@ -17,8 +17,9 @@ export default class TencentCloudClsSDKException extends Error {
    */
   code?: string
 
-  constructor(error: string, requestId = "") {
+  constructor(httpCode:number, error: string, requestId = "") {
     super(error)
+    this.httpCode = httpCode
     this.requestId = requestId || ""
   }
 
@@ -36,7 +37,8 @@ export default class TencentCloudClsSDKException extends Error {
       "message:" +
       this.getMessage() +
       "  requestId:" +
-      this.getRequestId()
+      this.getRequestId() +
+          "status:" + this.httpCode
     )
   }
 
@@ -50,3 +52,4 @@ export default class TencentCloudClsSDKException extends Error {
     )
   }
 }
+

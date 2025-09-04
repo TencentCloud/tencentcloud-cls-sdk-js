@@ -1,1 +1,1 @@
-export { AsyncClientOptions } from './options';
+export { AsyncClientOptions, Credential } from './options';
