@@ -15,6 +15,9 @@ import {
 import { signature } from "./common/sign";
 import * as axios from "axios"
 import {LogGroup, LogItem} from "./common/log";
+var zlib = require('zlib');
+// const { promisify } = require('util');
+
 
 export class AsyncClient {
     private topic: string;
@@ -188,7 +191,13 @@ export class AsyncClient {
         }
     }
 
-    public async sendImmediate(logs: LogItem[]): Promise<void> {
+    public async flush(): Promise<void> {
+        if (this.mem.getLength() > 0) {
+            await this.batchSend()
+        }
+    }
+
+    public async sendImmediate(logs: LogItem[]): Promise<ClsMessage> {
         let logGroup = new LogGroup()
         logGroup.setSource(this.sourceIp);
         for (let i = 0; i < logs.length; i++) {
@@ -202,10 +211,8 @@ export class AsyncClient {
         if (message.status!=200) {
             throw new TencentCloudClsSDKException(message.status, message.message, message.requestId)
         }
-        return
+        return message
     }
-
-
 
     /**
      * PutLogs
@@ -217,8 +224,8 @@ export class AsyncClient {
     private async putLogs(urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array): Promise<ClsMessage> {
         let message: ClsMessage= {status:0, message: "", requestId: ""};
         try {
-            let response= await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, body)
-            console.log(response)
+
+            let response= await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, zlib.deflateRawSync(body))
             if (response) {
                 message.status = response.status;
                 message.message = response.data;
@@ -227,7 +234,7 @@ export class AsyncClient {
                 message.status = 0;
                 message.message = "internal error";
             }
-        }catch(error) {
+        } catch(error) {
             if (error.response) {
                 message.status = error.response.status;
                 message.message = error.response.data;
@@ -237,9 +244,6 @@ export class AsyncClient {
                 message.message = error.toString();
             }
         }
-
-        console.log(message)
-
         return message
     }
 
@@ -261,11 +265,12 @@ export class AsyncClient {
         headParameter.set(CONST_AUTHORIZATION, signature_str);
         let headers: {[key: string]: string} = {};
         headParameter.forEach((value , key) =>{
-             headers[key] = value;
+            headers[key] = value;
         });
         if (this.credential.token!=null && this.credential.token.length>0) {
             headers["X-Cls-Token"] = this.credential.token;
         }
+        headers["x-cls-compress-type"] = "deflate"
         return axios.default({
             url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+this.topic,
             method: "post",
