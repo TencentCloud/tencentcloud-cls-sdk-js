@@ -2,25 +2,15 @@
  * @inner
  */
 export default class TencentCloudClsSDKException extends Error {
-  /**
-   * 请求id
-   */
   requestId: string
+  status: number
 
-  /**
-   * http状态码
-   */
-  httpCode?: number
-
-  /**
-   * 接口返回状态码
-   */
-  code?: string
-
-  constructor(httpCode:number, error: string, requestId = "") {
+  constructor(status:number, error: string, requestId = "") {
     super(error)
-    this.httpCode = httpCode
+    this.status = status
     this.requestId = requestId || ""
+    // 保持堆栈跟踪
+    Error.captureStackTrace(this, this.constructor);
   }
 
   getMessage(): string {
@@ -38,7 +28,7 @@ export default class TencentCloudClsSDKException extends Error {
       this.getMessage() +
       "  requestId:" +
       this.getRequestId() +
-          "status:" + this.httpCode
+          "status:" + this.status
     )
   }
 
@@ -46,9 +36,9 @@ export default class TencentCloudClsSDKException extends Error {
     return (
       "[TencentCloudSDKException]" +
       "message:" +
-      this.getMessage() +
+      this.message +
       "  requestId:" +
-      this.getRequestId()
+      this.requestId
     )
   }
 }

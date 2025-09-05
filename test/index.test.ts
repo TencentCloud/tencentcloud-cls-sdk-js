@@ -3,7 +3,7 @@ import * as chai from 'chai';
 
 import {LogItem, Content, LogGroup, AsyncClient} from '../src/index'
 import { signature } from '../src/common/sign';
-
+import TencentCloudClsSDKException from "../src/exception";
  
 const expect = chai.expect;
 describe('send log test', () => {
@@ -35,9 +35,9 @@ describe('send log test', () => {
 
     it('test send logs' ,async () => {
         let client = new AsyncClient({
-            endpoint: "ap-guangzhou-open.cls.tencentcs.com",
-            topic_id: "--",
-            credential: {secretId:"--", secretKey:"--", token:""},
+            endpoint: "ap-xian-ec.cls.tencentyun.com",
+            topic_id: "xxx-47fc-46f5-a0ee-08b923b0205",
+            credential: {secretId:"xxx", secretKey:"xxx", token:""},
         });
         let items: LogItem[] = []
         let item = new LogItem()
@@ -45,9 +45,14 @@ describe('send log test', () => {
         item.setTime(Math.floor(Date.now()/1000))
         items.push(item)
         try {
-            await client.sendImmediate(items);
-        } catch(err) {
-            console.log(err.toString())
+            let message = await client.sendImmediate(items);
+            console.log(message)
+        } catch(err: any) {
+            if (err instanceof TencentCloudClsSDKException) {
+                console.log(err.toString())
+            }
+            console.log(err)
+
         }
     });
 });

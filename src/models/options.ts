@@ -36,6 +36,11 @@ export interface AsyncClientOptions {
      * 上传异常回调
      */
     onSendLogsError?: (res: any) => void;
+
+    /**
+     * 最大内存存储的数据长度
+     */
+    maxMemLogCount?: number;
 }
 
 /**

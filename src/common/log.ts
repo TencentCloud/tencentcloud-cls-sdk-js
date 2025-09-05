@@ -1,4 +1,4 @@
-import { cls } from '../../vendor/compiled'
+import {cls} from '../../vendor/compiled'
 
 
 export class LogGroup {
@@ -13,39 +13,39 @@ export class LogGroup {
 
     /**
      * get log group file name
-     * @returns 
+     * @returns
      */
-     public getFilename(): string {
-		return this.mLogs.filename || "";
-	}
+    public getFilename(): string {
+        return this.mLogs.filename || "";
+    }
 
     /**
      * set log group file name
-     * @param filename 
+     * @param filename
      */
-	public setFilename(filename: string): void {
-		this.mLogs.filename = filename;
-	}
+    public setFilename(filename: string): void {
+        this.mLogs.filename = filename;
+    }
 
     /**
      * Get log source
      * @returns string
      */
     public getSource(): string {
-		return this.mLogs.source || "";
-	}
+        return this.mLogs.source || "";
+    }
 
-	/**
-	 * Set log source
-	 * @param source log source
-	 */
-	public setSource(source: string): void {
-		this.mLogs.source = source;
-	}
+    /**
+     * Set log source
+     * @param source log source
+     */
+    public setSource(source: string): void {
+        this.mLogs.source = source;
+    }
 
     /**
      * 增加日志
-     * @param log 
+     * @param log
      */
     public addLogs(log: LogItem) {
         this.mLogs.logs.push(log.getLog())
@@ -63,17 +63,17 @@ export class LogGroup {
 
     /**
      * decode
-     * @param buffer 
+     * @param buffer
      * @returns  {[key: string]: any}
      */
-    public decode(buffer: Uint8Array): {[key: string]: any} {
+    public decode(buffer: Uint8Array): { [key: string]: any } {
         return cls.LogGroupList.decode(buffer).toJSON()
     }
 
     /**
      * encode
-     * @param buffer 
-     * @returns  string | null 
+     * @param buffer
+     * @returns  string | null
      */
     public verify(buffer: Uint8Array): string | null {
         return cls.LogGroupList.verify(buffer)
@@ -92,7 +92,7 @@ export class LogItem {
 
     /**
      * 日志字段
-     * @param content 
+     * @param content
      */
     public pushBack(content: Content) {
         this.mContents.contents.push(content.getContent())
@@ -100,7 +100,7 @@ export class LogItem {
 
     /**
      * 日志时间
-     * @param time 
+     * @param time
      */
     public setTime(time: number) {
         this.mContents.time = time
@@ -132,7 +132,7 @@ export class Content {
     public content: cls.Log.Content;
 
     constructor(key: string, value: string) {
-        this.content = new cls.Log.Content({ key, value });
+        this.content = new cls.Log.Content({key, value});
     }
 
     /**
