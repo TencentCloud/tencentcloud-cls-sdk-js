@@ -1,5 +1,5 @@
 import {ProducerOptions, Credential} from './models';
-import TencentCloudClsSDKException from './exception'
+import {TencentCloudClsSDKException} from './exception'
 import {
     CONST_CONTENT_LENGTH,
     CONST_CONTENT_TYPE,
@@ -187,18 +187,12 @@ export class Producer {
             this.mem.mdata.shift()
         }
         let len = this.calcLogLength(log)
-       if (len <=0 || len > 1024*1024) {
-           throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
-       }
+        if (len <= 0 || len > 1048576) {
+            throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
+        }
         log.setLength(len)
         this.mem.add(log)
         if (this.mem.getLength() >= this.count) {
-            await this.batchSend()
-        }
-    }
-
-    public async flush(): Promise<void> {
-        if (this.mem.getLength() > 0) {
             await this.batchSend()
         }
     }
@@ -243,8 +237,12 @@ export class Producer {
         } catch (error) {
             if (error.response) {
                 message.status = error.response.status;
-                message.message = error.response.data;
                 message.requestId = error.response.headers["x-cls-requestid"];
+                if (error.response.data != null && error.response.data.errorcode != null && error.response.data.errormessage != null) {
+                    message.message = JSON.stringify(error.response.data)
+                } else {
+                    message.message = "internal error";
+                }
             } else {
                 message.status = 0;
                 message.message = error.toString();
@@ -267,7 +265,7 @@ export class Producer {
         let signature_str: string = signature(
             this.credential.secretId,
             this.credential.secretKey,
-            method, resourceUri, urlParameter, headParameter, 300000);
+            method, resourceUri, urlParameter, headParameter, 3000000);
         headParameter.set(CONST_AUTHORIZATION, signature_str);
         let headers: { [key: string]: string } = {};
         headParameter.forEach((value, key) => {
@@ -277,6 +275,7 @@ export class Producer {
             headers["X-Cls-Token"] = this.credential.token;
         }
         headers["x-cls-compress-type"] = CONST_GZIP_ENCODING
+        headers[CONST_HOST] = this.hostName
         return axios.default({
             url: this.httpType + this.hostName + resourceUri + "?" + TOPIC_ID + "=" + this.topic,
             method: "post",
@@ -293,9 +292,7 @@ export class Producer {
      */
     private getCommonHeadPara(contentType: string): Map<string, string> {
         let headParameter: Map<string, string> = new Map();
-        headParameter.set(CONST_CONTENT_LENGTH, "0");
         headParameter.set(CONST_CONTENT_TYPE, contentType);
-        headParameter.set(CONST_HOST, this.hostName);
         return headParameter;
     }
 

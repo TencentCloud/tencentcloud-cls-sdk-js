@@ -1,14 +1,16 @@
 /**
  * @inner
  */
-export default class TencentCloudClsSDKException extends Error {
+export class TencentCloudClsSDKException extends Error {
   requestId: string
   status: number
 
-  constructor(status:number, error: string, requestId = "") {
-    super(error)
+  constructor(status:number, message: string, requestId = "") {
+    super(message)
     this.status = status
     this.requestId = requestId || ""
+    this.name = 'TencentCloudClsSDKException';
+    Object.setPrototypeOf(this, TencentCloudClsSDKException.prototype);
     // 保持堆栈跟踪
     Error.captureStackTrace(this, this.constructor);
   }
@@ -41,5 +43,6 @@ export default class TencentCloudClsSDKException extends Error {
       this.requestId
     )
   }
+
 }
 

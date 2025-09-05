@@ -1,13 +1,12 @@
 // import * as mocha from 'mocha';
 import * as chai from 'chai';
 
-import {LogItem, Content, LogGroup, Producer} from '../src/index'
-import { signature } from '../src/common/sign';
-import TencentCloudClsSDKException from "../src/exception";
- 
+import {LogItem, Content, LogGroup, Producer, TencentCloudClsSDKException} from '../src/index'
+import {signature} from '../src/common/sign';
+
 const expect = chai.expect;
 describe('send log test', () => {
-    it.skip('test build pb content' , () => {
+    it.skip('test build pb content', () => {
         let item = new LogItem()
         item.pushBack(new Content("hello", "world"))
         item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world"))
@@ -24,35 +23,37 @@ describe('send log test', () => {
         expect(verify_str).to.equal(null)
     });
 
-    it.skip('test sign' ,  () => {
+    it.skip('test sign', () => {
         let params: Map<string, string> = new Map()
         let headers: Map<string, string> = new Map()
         params.set('logset_id', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
-        headers.set('Host','ap-shanghai.cls.myqcloud.com')
+        headers.set('Host', 'ap-shanghai.cls.myqcloud.com')
         headers.set('User-Agent', 'AuthSDK')
-        signature('SecretIdExample_XXXXXXXXXXXXXXXXXXXXX', 'SecretKeyExample_XXXXXXXXXXXXXXXX', 'GET', '/logset', params,headers, 300);
+        signature('SecretIdExample_XXXXXXXXXXXXXXXXXXXXX', 'SecretKeyExample_XXXXXXXXXXXXXXXX', 'GET', '/logset', params, headers, 300);
     });
 
-    it('test send logs' ,async () => {
+    it('test send logs', async () => {
         let client = new Producer({
             endpoint: "ap-xian-ec.cls.tencentyun.com",
-            topic_id: "dbb3d9f9-47fc-46f5-a0ee-08b923b0205",
-            credential: {secretId:"**", secretKey:"**", token:""},
+            topic_id: "dbb3d9f9-47fc-46f5-a0ee-",
+            credential: {
+                secretId: "**",
+                secretKey: "**",
+                token: ""
+            },
         });
         let items: LogItem[] = []
         let item = new LogItem()
         item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world"))
-        item.setTime(Math.floor(Date.now()/1000))
+        item.setTime(Math.floor(Date.now() / 1000))
         items.push(item)
         try {
             let message = await client.sendImmediate(items);
             console.log(message)
-        } catch(err: any) {
-            if (err instanceof TencentCloudClsSDKException) {
-                console.log(err.toString())
+        } catch (error) {
+            if (error instanceof TencentCloudClsSDKException) {
+                console.log(error.toString())
             }
-            console.log(err)
-
         }
     });
 });
