@@ -1,4 +1,4 @@
-import {AsyncClientOptions, Credential} from './models';
+import {ProducerOptions, Credential} from './models';
 import TencentCloudClsSDKException from './exception'
 import {
     CONST_CONTENT_LENGTH,
@@ -18,7 +18,7 @@ import {LogGroup, LogItem} from "./common/log";
 
 var zlib = require('zlib');
 
-export class AsyncClient {
+export class Producer {
     private topic: string;
     private httpType: string;
     private hostName: string;
@@ -32,10 +32,10 @@ export class AsyncClient {
     private maxMemLogCount: number = 10000;
     private onSendLogsError?: (res: any) => void;
 
-    constructor(options: AsyncClientOptions) {
+    constructor(options: ProducerOptions) {
         // 参数校验
         if (options == null) {
-            throw new TencentCloudClsSDKException(-1, "AsyncClientOptions invalid")
+            throw new TencentCloudClsSDKException(-1, "options invalid")
         }
         // 校验域名
         if (options.endpoint == null) {

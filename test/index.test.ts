@@ -1,7 +1,7 @@
 // import * as mocha from 'mocha';
 import * as chai from 'chai';
 
-import {LogItem, Content, LogGroup, AsyncClient} from '../src/index'
+import {LogItem, Content, LogGroup, Producer} from '../src/index'
 import { signature } from '../src/common/sign';
 import TencentCloudClsSDKException from "../src/exception";
  
@@ -34,10 +34,10 @@ describe('send log test', () => {
     });
 
     it('test send logs' ,async () => {
-        let client = new AsyncClient({
+        let client = new Producer({
             endpoint: "ap-xian-ec.cls.tencentyun.com",
-            topic_id: "xxx-47fc-46f5-a0ee-08b923b0205",
-            credential: {secretId:"xxx", secretKey:"xxx", token:""},
+            topic_id: "dbb3d9f9-47fc-46f5-a0ee-08b923b0205",
+            credential: {secretId:"**", secretKey:"**", token:""},
         });
         let items: LogItem[] = []
         let item = new LogItem()

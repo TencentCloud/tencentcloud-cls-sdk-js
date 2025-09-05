@@ -30,7 +30,7 @@ endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product
 // CLS日志服务日志主题ID； 必填参数
 let topicID = "xxxx"
 
-let client = new AsyncClient({
+let client = new Producer({
 						// 目标日志主题所在地域域名； 必填参数
             endpoint: "ap-guangzhou.cls.tencentcs.com",
             // 访问密钥ID； 必填参数

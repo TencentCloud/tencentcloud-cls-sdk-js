@@ -1,4 +1,4 @@
-export interface AsyncClientOptions {
+export interface ProducerOptions {
     /**
      * The cls service topic id (e.g. "xxxx-xxxx-xxxx-xxxx")
      * @type {string}
@@ -25,20 +25,27 @@ export interface AsyncClientOptions {
      */
     sendTimeout?: number;
     /**
-     * 发送时间阈值, default 10s
+     * 发送时间阈值, default 2s
+     * @type {number}
+     * Optional
      */
     time?: number;
     /**
-     * 发送条数阈值, default 10
+     * 发送条数阈值, default 1000
+     * @type {number}
+     * Optional
      */
     count?: number;
     /**
-     * 上传异常回调
+     * 上传回调
+     * @type {function}
+     * Optional
      */
     onSendLogsError?: (res: any) => void;
-
     /**
-     * 最大内存存储的数据长度
+     * 最大内存存储的数据长度, default 10000
+     * @type {number}
+     * Optional
      */
     maxMemLogCount?: number;
 }

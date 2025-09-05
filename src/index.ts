@@ -1,5 +1,5 @@
 export { LogGroup, LogItem, Content } from './common/log';
-export { AsyncClientOptions, Credential } from './models/options';
-export { AsyncClient, ClsMessage } from './asyncClient';
+export { ProducerOptions, Credential } from './models/options';
+export { Producer, ClsMessage } from './producer';
 
 
