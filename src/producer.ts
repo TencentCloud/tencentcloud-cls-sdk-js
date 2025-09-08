@@ -97,14 +97,25 @@ export class Producer {
         // 内存队列
         this.mem = {
             mdata: [],
+            lock: false,
             getLength: function () {
                 return this.mdata.length;
             },
-            add: function (data: any) {
+            add: async function (data: any) {
+                while (this.lock) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                this.lock = true;
                 this.mdata.push(data);
+                this.lock = false;
             },
-            clear: function (count: any) {
+            clear: async function (count: any) {
+                while (this.lock) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                this.lock = true;
                 this.mdata.splice(0, count);
+                this.lock = false;
             },
         }
         this.batchInterval();
@@ -161,7 +172,7 @@ export class Producer {
                 }
                 let message = await this.putLogs(urlParameter, headParameter, logGroup.encode())
                 if (message.status == 200 || message.status == 401 || message.status == 413 || message.status == 403 || message.status == 400) {
-                    this.mem.clear(dataSendLengthCount)
+                    await this.mem.clear(dataSendLengthCount)
                 }
                 if (this.onSendLogsError != null) {
                     this.onSendLogsError(message)
@@ -200,7 +211,7 @@ export class Producer {
             throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
         }
         log.setLength(len)
-        this.mem.add(log)
+        await this.mem.add(log)
         if (this.mem.getLength() >= this.count && this.dataHasSend) {
             await this.batchSend()
         }
