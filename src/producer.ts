@@ -97,25 +97,14 @@ export class Producer {
         // 内存队列
         this.mem = {
             mdata: [],
-            lock: false,
             getLength: function () {
                 return this.mdata.length;
             },
-            add: async function (data: any) {
-                while (this.lock) {
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
-                this.lock = true;
+            add: function (data: any) {
                 this.mdata.push(data);
-                this.lock = false;
             },
-            clear: async function (count: any) {
-                while (this.lock) {
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
-                this.lock = true;
+            clear: function (count: any) {
                 this.mdata.splice(0, count);
-                this.lock = false;
             },
         }
         this.batchInterval();
@@ -149,19 +138,15 @@ export class Producer {
     private async batchSend() {
         try {
             if (this.dataHasSend && this.mem.mdata.length > 0) {
-                const memoryData = this.mem.mdata;
-                let dataToSend: LogItem[] = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
                 this.dataHasSend = false
                 let logGroup = new LogGroup()
                 logGroup.setSource(this.sourceIp)
                 let dataSendLengthSize = 0
                 let dataSendLengthCount = 0
-                let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
-                let urlParameter = this.getCommonUrlPara()
-                let dataLength = memoryData.length;
+                let dataLength = this.mem.mdata.length;
                 for (let i = 0; i < dataLength; i++) {
-                    let log = dataToSend[i]
-                    if (dataSendLengthSize >= 3 * 1024 * 1024) {
+                    let log = this.mem.mdata[i]
+                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i == this.count-1) {
                         break
                     }
                     dataSendLengthCount += 1;
@@ -170,9 +155,11 @@ export class Producer {
                     }
                     logGroup.addLogs(log)
                 }
+                let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
+                let urlParameter = this.getCommonUrlPara()
                 let message = await this.putLogs(urlParameter, headParameter, logGroup.encode())
                 if (message.status == 200 || message.status == 401 || message.status == 413 || message.status == 403 || message.status == 400) {
-                    await this.mem.clear(dataSendLengthCount)
+                    this.mem.clear(dataSendLengthCount)
                 }
                 if (this.onSendLogsError != null) {
                     this.onSendLogsError(message)
@@ -211,7 +198,7 @@ export class Producer {
             throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
         }
         log.setLength(len)
-        await this.mem.add(log)
+        this.mem.add(log)
         if (this.mem.getLength() >= this.count && this.dataHasSend) {
             await this.batchSend()
         }
