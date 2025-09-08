@@ -4,18 +4,16 @@ import {WebTrackerOptions} from "./models/options";
 import {TOPIC_ID} from "./common/constants";
 
 export class WebTracker {
-    private timer: any;
     private time: number;
     private count: number;
-    private logs: Log[];
     private url: string;
     private opt: WebTrackerOptions;
+    private mem: any;
+    private dataHasSend: boolean = true;
 
     constructor(opt: WebTrackerOptions) {
-        this.timer = null;
         this.time = 10;
         this.count = 10;
-        this.logs = [];
         if (opt.time != null) {
             this.time = opt.time;
         }
@@ -28,135 +26,126 @@ export class WebTracker {
             this.url = "https://" + opt.host + "/tracklog";
         }
         this.opt = opt;
+        // 内存数据队列（用于批量发送）
+        this.mem = {
+            mdata: [],
+            getLength: function() {
+                return this.mdata.length;
+            },
+            add: function(data: any) {
+                this.mdata.push(data);
+            },
+            clear: function(count: any) {
+                this.mdata.splice(0, count);
+            },
+        }
+        this.batchInterval();
     }
 
-    private sendInner() {
-        if (this.timer != null) {
-            if (this.logs.length >= this.count) {
-                clearTimeout(this.timer);
-                this.timer = null;
-                this.sendImmediateInner();
+    private batchInterval() {
+        let i = this;
+        // 启动数据发送定时任务（支持失败重试机制）
+        (function startSendScheduler() {
+            setTimeout(function() {
+                    i.batchSend(); // 执行批量发送
+                    startSendScheduler(); // 递归调用自身，实现循环
+                },
+                i.time * 1000);
+        })();
+
+        // 启动数据写入定时任务（固定间隔）
+        // (function startWriteScheduler() {
+        //     setTimeout(function() {
+        //             i.batchWrite(); // 执行批量写入
+        //             startWriteScheduler(); // 递归调用自身，实现循环
+        //         },
+        //         500) // 固定500毫秒间隔
+        // })();
+    }
+
+    private batchSend() {
+        if (this.dataHasSend && this.mem.mdata.length > 0) {
+            const memoryData = this.mem.mdata;
+            let dataToSend = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
+            let dataCount = dataToSend.length;
+            this.dataHasSend = false;
+            let source="";
+            if (this.opt.source != undefined) {
+                source = this.opt.source;
             }
-        } else {
-            const that = this;
-            if (this.logs.length >= this.count || this.time <= 0) {
-                this.sendImmediateInner();
-            } else {
-                this.timer = setTimeout(function () {
-                    that.sendImmediateInner();
-                }, this.time * 1e3);
-            }
+            let onError = this.opt.onPutlogsError
+            let logGroup = new LogGroup(source);
+            logGroup.setLogs(dataToSend);
+            let i = this;
+            this.opt.platform_request({
+                url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
+                method: 'POST',
+                data: JSON.stringify(logGroup),
+                success: function(res: any) {
+                    i.dataHasSend = true;
+                    if (res.code != 200 && onError!= undefined) {
+                        onError(res);
+                    }
+                    if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
+                        i.mem.clear(dataCount)
+                        // i.dataHasChange = true
+                        // i.batchWrite()
+                    }
+                },
+                fail: function(data: any, code: any) {
+                    i.dataHasSend = true;
+                    if (onError!= undefined) {
+                        onError({data: data, code: code});
+                    }
+                },
+            })
         }
     }
 
     public send(log: Log) {
-        this.logs.push(log);
-        this.sendInner();
+        if (this.mem.getLength() >= 500) {
+            this.mem.mdata.shift()
+        }
+        this.mem.add(log)
+        // this.dataHasChange = true;
+        if (this.mem.getLength() >= this.count) {
+            this.batchSend()
+        }
     }
 
-    private doQuickAppPlatformSend() {
+    public sendImmediate(log: Log) {
+        let logs = [];
+        logs.push(log);
+        this.platformSend(logs)
+    }
+
+    public getOpts(): WebTrackerOptions {
+        return this.opt;
+    }
+
+    private platformSend(logs: Log[]) {
         let source="";
         if (this.opt.source != undefined) {
             source = this.opt.source;
         }
         let onError = this.opt.onPutlogsError
         let logGroup = new LogGroup(source);
-        logGroup.setLogs(this.logs);
+        logGroup.setLogs(logs);
+
         this.opt.platform_request({
             url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
             method: 'POST',
             data: JSON.stringify(logGroup),
             success: function(res: any) {
-                if (res.statusCode != 200 && onError!= undefined) {
+                if (res.code != 200 && onError!= undefined) {
                     onError(res);
                 }
             },
             fail: function(data: any, code: any) {
                 if (onError!= undefined) {
                     onError({data: data, code: code});
-                } else {
-                    console.log("send log to cls failed.", {data: data, code: code});
                 }
             },
         })
-    }
-
-
-    private doCommonPlatformSend() {
-        let source="";
-        if (this.opt.source != undefined) {
-            source = this.opt.source;
-        }
-        let onError = this.opt.onPutlogsError
-        let logGroup = new LogGroup(source);
-        logGroup.setLogs(this.logs);
-
-        let requestUrl =  this.url +"?"+TOPIC_ID+"="+this.opt.topicId
-        let options = {
-            url: requestUrl, //请求地址
-            data: JSON.stringify(logGroup),
-            header:{ //HTTP 请求的 header
-                "content-type": "application/json",
-            },
-            method: "POST",
-            timeout: 60000, //超时时间，单位为毫秒（最大值 60000ms)
-        }
-
-        this.opt.platform_request({
-            ...options,
-            success: function(res: any) {
-                if (res.statusCode != 200 && onError!= undefined) {
-                    onError(res);
-                }
-            },
-            fail: function(res: any) {
-                if (onError != undefined) {
-                    onError(res);
-                } else {
-                    console.log("send log to cls failed.", res);
-                }
-            },
-        })
-    }
-
-    public sendImmediateInner() {
-        if (this.logs && this.logs.length > 0) {
-            if (this.opt.platform == "quick-app") {
-                this.doQuickAppPlatformSend();
-            } else if (this.opt.platform == "tt") {
-                this.doCommonPlatformSend();
-            } else if (this.opt.platform == "alipay") {
-                this.doCommonPlatformSend();
-            } else if (this.opt.platform == "dd") {
-                this.doCommonPlatformSend();
-            } else {
-                this.doCommonPlatformSend();
-            }
-            // 处理真实发送
-            if (this.timer != null) {
-                clearTimeout(this.timer);
-                this.timer = null;
-            }
-            this.logs = [];
-        }
-    }
-
-    public sendImmediate(log: Log) {
-        this.logs.push(log);
-        this.sendImmediateInner();
-    }
-
-    public sendBatchLogs(logs: Log[]) {
-        this.logs.push(...logs);
-        this.sendInner();
-    }
-
-    public sendBatchLogsImmediate(logs: Log[]) {
-        this.logs.push(...logs);
-        this.sendImmediateInner();
-    }
-
-    public getOpts(): WebTrackerOptions {
-        return this.opt;
     }
 }

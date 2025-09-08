@@ -29,6 +29,4 @@ export interface WebTrackerOptions {
      * 上传异常回调
      */
     onPutlogsError?: (res: any) => void;
-
-
 }
