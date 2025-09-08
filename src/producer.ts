@@ -147,7 +147,8 @@ export class Producer {
                 let dataSendLengthCount = 0
                 let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
                 let urlParameter = this.getCommonUrlPara()
-                for (let i = 0; i < memoryData.length; i++) {
+                let dataLength = memoryData.length;
+                for (let i = 0; i < dataLength; i++) {
                     let log = dataToSend[i]
                     if (dataSendLengthSize >= 3 * 1024 * 1024) {
                         break
@@ -200,7 +201,7 @@ export class Producer {
         }
         log.setLength(len)
         this.mem.add(log)
-        if (this.mem.getLength() >= this.count) {
+        if (this.mem.getLength() >= this.count && this.dataHasSend) {
             await this.batchSend()
         }
     }
