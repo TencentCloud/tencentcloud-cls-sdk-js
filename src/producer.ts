@@ -153,6 +153,9 @@ export class Producer {
                         break
                     }
                     dataSendLengthCount += 1;
+                    if (log == undefined) {
+                        continue
+                    }
                     logGroup.addLogs(log)
                 }
                 let message = await this.putLogs(urlParameter, headParameter, logGroup.encode())
@@ -165,6 +168,7 @@ export class Producer {
                 this.dataHasSend = true;
             }
         } catch (e) {
+            this.dataHasSend = true;
             console.log(e)
         }
     }
