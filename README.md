@@ -4,7 +4,7 @@
 
 ## 安装指令
 ```
-npm i tencentcloud-cls-sdk-js
+npm i tencentcloud-cls-sdk-nodejs
 ```
 
 ## 参数描述
