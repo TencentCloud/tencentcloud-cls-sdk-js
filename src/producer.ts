@@ -136,32 +136,36 @@ export class Producer {
     }
 
     private async batchSend() {
-        if (this.dataHasSend && this.mem.mdata.length > 0) {
-            const memoryData = this.mem.mdata;
-            let dataToSend: LogItem[] = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
-            this.dataHasSend = false
-            let logGroup = new LogGroup()
-            logGroup.setSource(this.sourceIp)
-            let dataSendLengthSize = 0
-            let dataSendLengthCount = 0
-            let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
-            let urlParameter = this.getCommonUrlPara()
-            for (let i = 0; i < memoryData.length; i++) {
-                let log = dataToSend[i]
-                if (dataSendLengthSize >= 3 * 1024 * 1024) {
-                    break
+        try {
+            if (this.dataHasSend && this.mem.mdata.length > 0) {
+                const memoryData = this.mem.mdata;
+                let dataToSend: LogItem[] = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
+                this.dataHasSend = false
+                let logGroup = new LogGroup()
+                logGroup.setSource(this.sourceIp)
+                let dataSendLengthSize = 0
+                let dataSendLengthCount = 0
+                let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
+                let urlParameter = this.getCommonUrlPara()
+                for (let i = 0; i < memoryData.length; i++) {
+                    let log = dataToSend[i]
+                    if (dataSendLengthSize >= 3 * 1024 * 1024) {
+                        break
+                    }
+                    dataSendLengthCount += 1;
+                    logGroup.addLogs(log)
                 }
-                dataSendLengthCount += 1;
-                logGroup.addLogs(log)
+                let message = await this.putLogs(urlParameter, headParameter, logGroup.encode())
+                if (message.status == 200 || message.status == 401 || message.status == 413 || message.status == 403 || message.status == 400) {
+                    this.mem.clear(dataSendLengthCount)
+                }
+                if (this.onSendLogsError != null) {
+                    this.onSendLogsError(message)
+                }
+                this.dataHasSend = true;
             }
-            let message = await this.putLogs(urlParameter, headParameter, logGroup.encode())
-            if (message.status == 200 || message.status == 401 || message.status == 413 || message.status == 403 || message.status == 400) {
-                this.mem.clear(dataSendLengthCount)
-            }
-            if (this.onSendLogsError != null) {
-                this.onSendLogsError(message)
-            }
-            this.dataHasSend = true;
+        } catch (e) {
+            console.log(e)
         }
     }
 
