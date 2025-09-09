@@ -1,5 +1,6 @@
 import {Log, LogGroup} from "./common/cls_log";
 import {WebTrackerOptions} from "./models/options";
+import {TencentCloudClsSDKException} from "./exception";
 
 import {TOPIC_ID} from "./common/constants";
 
@@ -64,51 +65,88 @@ export class WebTracker {
     }
 
     private batchSend() {
-        if (this.dataHasSend && this.mem.mdata.length > 0) {
-            const memoryData = this.mem.mdata;
-            let dataToSend = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
-            let dataCount = dataToSend.length;
-            this.dataHasSend = false;
-            let source="";
-            if (this.opt.source != undefined) {
-                source = this.opt.source;
+        try {
+            if (this.dataHasSend && this.mem.mdata.length > 0) {
+                this.dataHasSend = false;
+                let source = "";
+                if (this.opt.source != undefined) {
+                    source = this.opt.source;
+                }
+                let logGroup = new LogGroup(source);
+                let dataSendLengthSize = 0
+                let dataSendLengthCount = 0
+                let dataLength = this.mem.mdata.length;
+                for (let i = 0; i < dataLength; i++) {
+                    let log: Log = this.mem.mdata[i]
+                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i == this.count - 1) {
+                        break
+                    }
+                    dataSendLengthCount += 1;
+                    if (log == undefined) {
+                        continue
+                    }
+                    dataSendLengthSize += log.getLength();
+                    logGroup.addLog(log)
+                }
+                let onError = this.opt.onPutlogsError
+                let i = this;
+                this.opt.platform_request({
+                    url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
+                    method: 'POST',
+                    data: JSON.stringify(logGroup),
+                    success: function(res: any) {
+                        i.dataHasSend = true;
+                        if (res.code != 200 && onError!= undefined) {
+                            onError(res);
+                        }
+                        if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
+                            i.mem.clear(dataSendLengthCount)
+                            // i.dataHasChange = true
+                            // i.batchWrite()
+                        }
+                    },
+                    fail: function(data: any, code: any) {
+                        i.dataHasSend = true;
+                        if (onError!= undefined) {
+                            onError({data: data, code: code});
+                        }
+                    },
+                })
             }
-            let onError = this.opt.onPutlogsError
-            let logGroup = new LogGroup(source);
-            logGroup.setLogs(dataToSend);
-            let i = this;
-            this.opt.platform_request({
-                url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
-                method: 'POST',
-                data: JSON.stringify(logGroup),
-                success: function(res: any) {
-                    i.dataHasSend = true;
-                    if (res.code != 200 && onError!= undefined) {
-                        onError(res);
-                    }
-                    if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
-                        i.mem.clear(dataCount)
-                        // i.dataHasChange = true
-                        // i.batchWrite()
-                    }
-                },
-                fail: function(data: any, code: any) {
-                    i.dataHasSend = true;
-                    if (onError!= undefined) {
-                        onError({data: data, code: code});
-                    }
-                },
-            })
+        }catch (e) {
+            this.dataHasSend = true;
+            console.error(e);
         }
+
+    }
+
+    private calcLogLength(log: Log): number {
+        let l = log.getTime().toString().length
+        let contents = log.getContents()
+        for (const [key, value] of Object.entries(contents)) {
+            if (key === null || key === undefined) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            }
+            if (value === null || value === undefined) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            }
+            l += key.length + value.length
+        }
+        return l
     }
 
     public send(log: Log) {
         if (this.mem.getLength() >= 500) {
             this.mem.mdata.shift()
         }
+        let len = this.calcLogLength(log)
+        if (len <= 0 || len > 1048576) {
+            throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
+        }
+        log.setLength(len)
         this.mem.add(log)
         // this.dataHasChange = true;
-        if (this.mem.getLength() >= this.count) {
+        if (this.mem.getLength() >= this.count && this.dataHasSend) {
             this.batchSend()
         }
     }
@@ -116,6 +154,10 @@ export class WebTracker {
     public sendImmediate(log: Log) {
         let logs = [];
         logs.push(log);
+        let len = this.calcLogLength(log)
+        if (len <= 0 || len > 1048576) {
+            throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
+        }
         this.platformSend(logs)
     }
 
