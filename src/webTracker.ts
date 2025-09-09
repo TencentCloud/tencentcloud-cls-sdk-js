@@ -11,6 +11,7 @@ export class WebTracker {
     private opt: WebTrackerOptions;
     private mem: any;
     private dataHasSend: boolean = true;
+    private maxMemLogCount: number = 500;
 
     constructor(opt: WebTrackerOptions) {
         this.time = 10;
@@ -39,6 +40,9 @@ export class WebTracker {
             clear: function(count: any) {
                 this.mdata.splice(0, count);
             },
+        }
+        if (this.opt.maxMemLogCount != null) {
+            this.maxMemLogCount = this.opt.maxMemLogCount;
         }
         this.batchInterval();
     }
@@ -136,7 +140,7 @@ export class WebTracker {
     }
 
     public send(log: Log) {
-        if (this.mem.getLength() >= 500) {
+        if (this.mem.getLength() >= this.maxMemLogCount) {
             this.mem.mdata.shift()
         }
         let len = this.calcLogLength(log)
