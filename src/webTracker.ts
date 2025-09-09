@@ -1,5 +1,7 @@
 import {Log, LogGroup} from "./common/cls_log";
 import {WebTrackerOptions} from "./models/options";
+import {TencentCloudClsSDKException} from "./exception"
+
 const nativeFetch = require('@system.fetch')
 // const storage = require("@system.storage")
 
@@ -12,6 +14,7 @@ export class WebTracker {
     private opt: WebTrackerOptions;
     private mem: any;
     private dataHasSend: boolean = true;
+    private maxMemLogCount: number = 500;
     // private syncStorage: boolean = false;
     // private dataHasChange: boolean = false;
 
@@ -33,21 +36,26 @@ export class WebTracker {
         // 内存数据队列（用于批量发送）
         this.mem = {
             mdata: [],
-            getLength: function() {
+            getLength: function () {
                 return this.mdata.length;
             },
-            add: function(data: any) {
+            add: function (data: any) {
                 this.mdata.push(data);
             },
-            clear: function(count: any) {
+            clear: function (count: any) {
                 this.mdata.splice(0, count);
             },
         }
+        if (this.opt.maxMemLogCount != null) {
+            this.maxMemLogCount = this.opt.maxMemLogCount;
+        }
+
+
         this.batchInterval();
     }
 
     private platformSend(logs: Log[]) {
-        let source="";
+        let source = "";
         if (this.opt.source != undefined) {
             source = this.opt.source;
         }
@@ -56,16 +64,16 @@ export class WebTracker {
         logGroup.setLogs(logs);
 
         nativeFetch.fetch({
-            url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
+            url: this.url + "?" + TOPIC_ID + "=" + this.opt.topicId,
             method: 'POST',
             data: JSON.stringify(logGroup),
-            success: function(res: any) {
-                if (res.code != 200 && onError!= undefined) {
+            success: function (res: any) {
+                if (res.code != 200 && onError != undefined) {
                     onError(res);
                 }
             },
-            fail: function(data: any, code: any) {
-                if (onError!= undefined) {
+            fail: function (data: any, code: any) {
+                if (onError != undefined) {
                     onError({data: data, code: code});
                 }
             },
@@ -76,11 +84,11 @@ export class WebTracker {
         let i = this;
         // 启动数据发送定时任务（支持失败重试机制）
         (function startSendScheduler() {
-            setTimeout(function() {
+            setTimeout(function () {
                     i.batchSend(); // 执行批量发送
                     startSendScheduler(); // 递归调用自身，实现循环
                 },
-               i.time * 1000);
+                i.time * 1000);
         })();
 
         // 启动数据写入定时任务（固定间隔）
@@ -107,51 +115,86 @@ export class WebTracker {
     // }
 
     private batchSend() {
-        if (this.dataHasSend && this.mem.mdata.length > 0) {
-            const memoryData = this.mem.mdata;
-            let dataToSend = memoryData.length >= this.count ? memoryData.slice(0, this.count) : memoryData.slice(0, memoryData.length);
-            let dataCount = dataToSend.length;
-            this.dataHasSend = false;
-            let source="";
-            if (this.opt.source != undefined) {
-                source = this.opt.source;
+        try {
+            if (this.dataHasSend && this.mem.mdata.length > 0) {
+                this.dataHasSend = false;
+                let source = "";
+                if (this.opt.source != undefined) {
+                    source = this.opt.source;
+                }
+                let logGroup = new LogGroup(source);
+                let dataSendLengthSize = 0
+                let dataSendLengthCount = 0
+                let dataLength = this.mem.mdata.length;
+                for (let i = 0; i < dataLength; i++) {
+                    let log: Log = this.mem.mdata[i]
+                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i == this.count - 1) {
+                        break
+                    }
+                    dataSendLengthCount += 1;
+                    if (log == undefined) {
+                        continue
+                    }
+                    dataSendLengthSize += log.getLength();
+                    logGroup.addLog(log)
+                }
+                let onError = this.opt.onPutlogsError
+                let i = this;
+                nativeFetch.fetch({
+                    url: this.url + "?" + TOPIC_ID + "=" + this.opt.topicId,
+                    method: 'POST',
+                    data: JSON.stringify(logGroup),
+                    success: function (res: any) {
+                        i.dataHasSend = true;
+                        if (res.code != 200 && onError != undefined) {
+                            onError(res);
+                        }
+                        if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
+                            i.mem.clear(dataSendLengthCount)
+                            // i.dataHasChange = true
+                            // i.batchWrite()
+                        }
+                    },
+                    fail: function (data: any, code: any) {
+                        i.dataHasSend = true;
+                        if (onError != undefined) {
+                            onError({data: data, code: code});
+                        }
+                    },
+                })
             }
-            let onError = this.opt.onPutlogsError
-            let logGroup = new LogGroup(source);
-            logGroup.setLogs(dataToSend);
-            let i = this;
-            nativeFetch.fetch({
-                url: this.url +"?"+TOPIC_ID+"="+this.opt.topicId,
-                method: 'POST',
-                data: JSON.stringify(logGroup),
-                success: function(res: any) {
-                    i.dataHasSend = true;
-                    if (res.code != 200 && onError!= undefined) {
-                        onError(res);
-                    }
-                    if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
-                        i.mem.clear(dataCount)
-                        // i.dataHasChange = true
-                        // i.batchWrite()
-                    }
-                },
-                fail: function(data: any, code: any) {
-                    i.dataHasSend = true;
-                    if (onError!= undefined) {
-                        onError({data: data, code: code});
-                    }
-                },
-            })
+        } catch (e) {
+            this.dataHasSend = true;
+            console.error(e);
         }
     }
 
+    private calcLogLength(log: Log): number {
+        let l = log.getTime().toString().length
+        let contents = log.getContents()
+        for (const [key, value] of Object.entries(contents)) {
+            if (key === null || key === undefined) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            }
+            if (value === null || value === undefined) {
+                throw new TencentCloudClsSDKException(-1, "content key must be empty")
+            }
+            l += key.length + value.length
+        }
+        return l
+    }
+
     public send(log: Log) {
-        if (this.mem.getLength() >= 500) {
+        if (this.mem.getLength() >= this.maxMemLogCount) {
             this.mem.mdata.shift()
         }
+        let len = this.calcLogLength(log)
+        if (len <= 0 || len > 1048576) {
+            throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
+        }
+        log.setLength(len)
         this.mem.add(log)
-        // this.dataHasChange = true;
-        if (this.mem.getLength() >= this.count) {
+        if (this.mem.getLength() >= this.count && this.dataHasSend) {
             this.batchSend()
         }
     }
@@ -159,6 +202,11 @@ export class WebTracker {
     public sendImmediate(log: Log) {
         let logs = [];
         logs.push(log);
+        let len = this.calcLogLength(log)
+        if (len <= 0 || len > 1048576) {
+            throw new TencentCloudClsSDKException(-1, "InvalidLogSize. logItem invalid log size")
+        }
+        log.setLength(len)
         this.platformSend(logs)
     }
 

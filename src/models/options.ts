@@ -27,9 +27,10 @@ export interface WebTrackerOptions {
      */
     onPutlogsError?: (res: any) => void;
 
-    maxMemoryItems?: number;
-    persistInterval?: number;
-    sendTimeout?: number;
-    maxSendItems?: number;
-    retryBaseTimeout?: number;
+    /**
+     * 最大内存存储的数据长度, default 500
+     * @type {number}
+     * Optional
+     */
+    maxMemLogCount?: number;
 }

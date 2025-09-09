@@ -1,15 +1,16 @@
 /**
- * cls log 
+ * cls log
  */
 export class Log {
     private time: number;
     private contents: {[key: string]: string} = {};
+    private length: number = 0;
 
     /**
      * 初始化log
      * @param time 当前日志时间
      */
-    constructor(time: number) { 
+    constructor(time: number) {
         this.time = time
     }
 
@@ -34,26 +35,38 @@ export class Log {
      * @param key string
      * @param value string
      */
-    public addContent(key:string, value: string) {
+    public addContent(key: string, value: string) {
         this.contents[key] = value;
+    }
+    public getContents() {
+        return this.contents;
+    }
+
+    public setLength(value: number) {
+        this.length = value;
+    }
+
+    public getLength() {
+        return this.length
     }
 }
 
-export class LogGroup { 
+export class LogGroup {
     /**
      * source 来源ip
      */
     private source: string;
     private contextflow: string;
-    private filename: string;
+    private filename: string = "";
     private logs: Log[] = [];
-    constructor(source: string, filename?: string, contextflow?: string) { 
+
+    constructor(source: string, filename?: string, contextFlow?: string) {
         this.source = source
-        if (filename!=null && filename!=undefined) {
-            this.filename = ""
+        if (filename != undefined) {
+            this.filename = filename
         }
-        if (contextflow!=null && contextflow!=undefined) {
-            this.contextflow = ""
+        if (contextFlow != undefined) {
+            this.contextflow = contextFlow
         }
     }
 
@@ -66,8 +79,8 @@ export class LogGroup {
         return this.source;
     }
 
-    public setContextFlow() {
-        this.contextflow = this.contextflow;
+    public setContextFlow(contextFlow: string) {
+        this.contextflow = contextFlow;
     }
 
     public getContextFlow(): string {
