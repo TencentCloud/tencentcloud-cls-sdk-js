@@ -141,18 +141,19 @@ export class Producer {
                 this.dataHasSend = false
                 let logGroup = new LogGroup()
                 logGroup.setSource(this.sourceIp)
-                let dataSendLengthSize = 0
+                let dataSendLogSize = 0
                 let dataSendLengthCount = 0
                 let dataLength = this.mem.mdata.length;
                 for (let i = 0; i < dataLength; i++) {
-                    let log = this.mem.mdata[i]
-                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i == this.count-1) {
+                    let log: LogItem = this.mem.mdata[i]
+                    if (dataSendLogSize >= 3 * 1024 * 1024 || i == this.count-1) {
                         break
                     }
                     dataSendLengthCount += 1;
                     if (log == undefined) {
                         continue
                     }
+                    dataSendLogSize += log.getLength()
                     logGroup.addLogs(log)
                 }
                 let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF)
