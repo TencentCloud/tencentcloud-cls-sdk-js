@@ -100,10 +100,18 @@ export class WebTracker {
                     data: JSON.stringify(logGroup),
                     success: function(res: any) {
                         i.dataHasSend = true;
-                        if (res.code != 200 && onError!= undefined) {
+                        let status = 0;
+                        if (res.status) {
+                            status = res.status
+                        } else if (res.code) {
+                            status = res.code
+                        } else if (res.statusCode) {
+                            status = res.statusCode
+                        }
+                        if (status != 200 && onError!= undefined) {
                             onError(res);
                         }
-                        if (res.code == 200 || res.code == 401 || res.code == 413 || res.code == 403 || res.code == 400) {
+                        if (status == 200 || status == 401 || status == 413 || status == 403 || status == 400 || status == 0) {
                             i.mem.clear(dataSendLengthCount)
                             // i.dataHasChange = true
                             // i.batchWrite()
@@ -183,7 +191,15 @@ export class WebTracker {
             method: 'POST',
             data: JSON.stringify(logGroup),
             success: function(res: any) {
-                if (res.code != 200 && onError!= undefined) {
+                let status = 0;
+                if (res.status) {
+                    status = res.status
+                } else if (res.code) {
+                    status = res.code
+                } else if (res.statusCode) {
+                    status = res.statusCode
+                }
+                if (status != 200 && onError!= undefined) {
                     onError(res);
                 }
             },
