@@ -21,10 +21,10 @@ export class WebTracker {
     constructor(opt: WebTrackerOptions) {
         this.time = 10;
         this.count = 100;
-        if (opt.time != null) {
+        if (opt.time != null && opt.time > 0) {
             this.time = opt.time;
         }
-        if (opt.count != null) {
+        if (opt.count != null && opt.count > 0) {
             this.count = opt.count;
         }
         if (opt.host.startsWith("http://") || opt.host.startsWith("https://")) {
@@ -46,11 +46,9 @@ export class WebTracker {
                 this.mdata.splice(0, count);
             },
         }
-        if (this.opt.maxMemLogCount != null) {
+        if (this.opt.maxMemLogCount != null && this.opt.maxMemLogCount > 0) {
             this.maxMemLogCount = this.opt.maxMemLogCount;
         }
-
-
         this.batchInterval();
     }
 
@@ -128,7 +126,7 @@ export class WebTracker {
                 let dataLength = this.mem.mdata.length;
                 for (let i = 0; i < dataLength; i++) {
                     let log: Log = this.mem.mdata[i]
-                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i == this.count - 1) {
+                    if (dataSendLengthSize >= 3 * 1024 * 1024 || i > this.count - 1) {
                         break
                     }
                     dataSendLengthCount += 1;
