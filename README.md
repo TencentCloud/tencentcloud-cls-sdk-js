@@ -4,56 +4,105 @@
 
 ## 安装指令
 ```
-npm i tencentcloud-cls-sdk-js
+npm i tencentcloud-cls-sdk-nodejs
 ```
 
 ## 参数描述
+# ProducerOptions Interface
 
-| 参数名 | 类型     | 必填 | Description                                                  |
-| ------------- | --------------- | -------- | ------------------------------------------------------------ |
-| secretId    | string          | 是 | 访问密钥ID，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
-| secretKey  | string          | 是    | 访问密钥KEY，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
-| endpoint      | string          | 是  | 访问目标日志主题所在地域的域名, e.g. ap-guangzhou.cls.tencentcs.com，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
-| sourceIp      | string          | 否   | 源IP地址              |
-| retry_times      | integer          | 是    | 重试次数                                      |
-| topic_id      | string          | 是    | 目标CLS日志服务日志主题ID                                  |
+| Property | Type | Description | Optional |
+|----------|------|-------------|----------|
+| `topic_id` | `string` | The cls service topic id (e.g. "xxxx-xxxx-xxxx-xxxx") | No |
+| `endpoint` | `string` | The cls service topic region endpoint URL (e.g. "ap-guangzhou.cls.tencentcs.com") | No |
+| `credential` | `Credential` | Authentication information | No |
+| `sourceIp` | `string` | client ip | Yes |
+| `sendTimeout` | `number` | Request timeout in seconds, default 60s | Yes |
+| `time` | `number` | 发送时间阈值, default 2s | Yes |
+| `count` | `number` | 发送条数阈值, default 1000 | Yes |
+| `onSendLogsError` | `function` | 上传回调 | Yes |
+| `maxMemLogCount` | `number` | 最大内存存储的数据长度, default 10000 | Yes |
+
+# Credential Interface
+
+| Property | Type | Description | Optional |
+|----------|------|-------------|----------|
+| `secretId` | `string` | Tencent Cloud account secretId and secretKey | No |
+| `secretKey` | `string` | Tencent Cloud account secretKey | No |
+| `token` | `string` | Tencent Cloud account token (mutually exclusive with secretId) | Yes |
 
 ### 注意： 
 
 endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D)中 **API上传日志** Tab中的域名![image-20230403191435319](https://github.com/TencentCloud/tencentcloud-cls-sdk-js/blob/main/demo.png)
 
+本文档详细说明 CLS Producer 的两种日志发送接口：异步发送 send和同步发送 sendImmediate。
 
-## 请求样例
+## 异步发送接口 send
 
+```typescript
+public async send(log: LogItem): Promise<void>
 ```
 
-// CLS日志服务日志主题ID； 必填参数
-let topicID = "xxxx"
-
-let client = new AsyncClient({
-						// 目标日志主题所在地域域名； 必填参数
-            endpoint: "ap-guangzhou.cls.tencentcs.com",
-            // 访问密钥ID； 必填参数
-            secretId: "[secretId]", 
-            // 访问密钥KEY； 必填参数
-            secretKey: "[secretKey]",
-            // 源IP地址： 选填参数， 为空则自动填充本机IP
-            sourceIp: "127.0.0.1",
-            // 重试次数： 必填参数， 为空则自动填充本机IP
-            retry_times: 10,
-        });
-
+### 使用方式
+```typescript
+let client = new Producer({
+    endpoint: "ap-xian-ec.cls.tencentyun.com",
+    topic_id: "dbb3d9f9-47fc-46f5-a0ee-",
+    credential: {
+        secretId: "**",
+        secretKey: "**",
+        token: ""
+    },
+});
 let item = new LogItem()
-item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world2"))
-item.setTime(Math.floor(Date.now()/1000))
-
-let loggroup = new LogGroup()
-loggroup.addLogs(item)
-let request = new PutLogsRequest(topicID, loggroup);
-let data = await client.PutLogs(request);
-console.log(data)
+item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world"))
+item.setTime(Math.floor(Date.now() / 1000))
+try {
+    let message = await client.send(item);
+} catch (error) {
+    if (error instanceof TencentCloudClsSDKException) {
+        console.log(error.toString())
+    } else {
+        console.log(error)
+    }
+}        
 ```
 
-## Features
+## 同步发送接口
 
-- 支持lz4压缩上传
+```typescript
+public async sendImmediate(logs: LogItem[]): Promise<ClsMessage>
+```
+
+### 使用文档
+
+```typescript
+let client = new Producer({
+    endpoint: "ap-xian-ec.cls.tencentyun.com",
+    topic_id: "dbb3d9f9-47fc-46f5-a0ee-",
+    credential: {
+        secretId: "**",
+        secretKey: "**",
+        token: ""
+    },
+});
+let items: LogItem[] = []
+let item = new LogItem()
+item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world"))
+item.setTime(Math.floor(Date.now() / 1000))
+items.push(item)
+try {
+    let message = await client.sendImmediate(items);
+    console.log(message)
+} catch (error) {
+    if (error instanceof TencentCloudClsSDKException) {
+        console.log(error.toString())
+    }
+}
+```
+
+## 使用选择
+
+![Clipboard_Screenshot_1757045120.png](./image.png)
+
+
+

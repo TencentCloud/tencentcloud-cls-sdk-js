@@ -1,1 +1,1 @@
-export { AsyncClientOptions } from './options';
+export { ProducerOptions, Credential } from './options';

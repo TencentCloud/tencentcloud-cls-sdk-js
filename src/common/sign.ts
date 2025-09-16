@@ -2,7 +2,7 @@ import * as crypto from "crypto"
 
 let getParamKeylist = function (obj: Map<string, string>) {
     let list = [];
-    for(let key of obj.keys()) {
+    for (let key of obj.keys()) {
         if (obj.has(key)) {
             list.push(key);
         }
@@ -18,13 +18,13 @@ let getParamKeylist = function (obj: Map<string, string>) {
 let getHeaderKeylist = function (obj: Map<string, string>) {
     let list = [];
 
-    for(let key of obj.keys()) {
+    for (let key of obj.keys()) {
         var lowerKey = key.toLowerCase();
         if (obj.has(key) && (lowerKey === "content-type" || lowerKey === "content-md5" || lowerKey === "host" || lowerKey[0] === 'x')) {
             list.push(key);
         }
     }
-    
+
     return list.sort(function (a, b) {
         a = a.toLowerCase();
         b = b.toLowerCase();
@@ -60,7 +60,7 @@ let map2str = function (obj: Map<string, string>, getKeylist: Function) {
 
 export function signature(secretId: string, secretKey: string, method: string, path: string, params: Map<string, string>, headers: Map<string, string>, expire: number): string {
     // 签名有效起止时间
-    let now = Math.floor(Date.now()/1000);
+    let now = Math.floor(Date.now() / 1000);
     let exp = now + expire;
     now = now - 60;
 
@@ -87,13 +87,13 @@ export function signature(secretId: string, secretKey: string, method: string, p
 
     // 步骤五：构造 Authorization
     var authorization = [
-         'q-sign-algorithm=' + qSignAlgorithm,
-         'q-ak=' + qAk,
-         'q-sign-time=' + qSignTime,
-         'q-key-time=' + qpathTime,
-         'q-header-list=' + qHeaderList,
-         'q-url-param-list=' + qUrlParamList,
-         'q-signature=' + qSignature
+        'q-sign-algorithm=' + qSignAlgorithm,
+        'q-ak=' + qAk,
+        'q-sign-time=' + qSignTime,
+        'q-key-time=' + qpathTime,
+        'q-header-list=' + qHeaderList,
+        'q-url-param-list=' + qUrlParamList,
+        'q-signature=' + qSignature
     ].join('&');
 
     return authorization;
