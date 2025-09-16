@@ -29,6 +29,10 @@ export interface WebTrackerOptions {
      * 上传异常回调
      */
     onPutlogsError?: (res: any) => void;
-
-
+    /**
+     * 最大内存存储的数据长度, default 500
+     * @type {number}
+     * Optional
+     */
+    maxMemLogCount?: number;
 }
