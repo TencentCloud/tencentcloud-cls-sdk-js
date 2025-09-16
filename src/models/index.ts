@@ -1,1 +1,1 @@
-export { AsyncClientOptions } from './options';
+export { WebTrackerOptions } from './options';
