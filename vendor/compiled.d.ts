@@ -1,4 +1,6 @@
 import * as $protobuf from "protobufjs";
+import { Long } from 'protobufjs';
+
 /** Namespace cls. */
 export namespace cls {
 
