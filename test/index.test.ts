@@ -4,7 +4,6 @@ import * as chai from 'chai';
 import {LogItem, Content, LogGroup, AsyncClient} from '../src/index'
 import { signature } from '../src/common/sign';
 import { PutLogsRequest } from '../src/request/putLogsRequest';
-import { SearchLogRequest } from '../src/request/searchResquest';
  
 const expect = chai.expect;
 describe('send log test', () => {
@@ -34,11 +33,11 @@ describe('send log test', () => {
         signature('SecretIdExample_XXXXXXXXXXXXXXXXXXXXX', 'SecretKeyExample_XXXXXXXXXXXXXXXX', 'GET', '/logset', params,headers, 300);
     });
 
-    it('test send logs' , async () => {
+    it.skip('test send logs' , async () => {
         let client = new AsyncClient({
             endpoint: "ap-guangzhou.cls.tencentcs.com",
-            secretId: "", 
-            secretKey: "",
+            secretId: "your-secret-id", 
+            secretKey: "your-secret-key",
             secretToken: "",
             sourceIp: "127.0.0.1",
             retry_times: 2,
@@ -54,30 +53,5 @@ describe('send log test', () => {
         let request = new PutLogsRequest("320a4eb0-ff28-4f57-9bdb-b48736c44e78", loggroup);
         let data = await client.PutLogs(request);
         console.log(data, "--------")
-    });
-
-    it.skip('search log' , async () => {
-        let client = new AsyncClient({
-            endpoint: "ap-guangzhou.cls.tencentcs.com",
-            secretId: "", 
-            secretKey: "",
-            sourceIp: "127.0.0.1",
-            retry_times: 2,
-            compress: true,
-        });
-        try {
-            let result = await client.SearchLog(new SearchLogRequest(
-                "", 
-                "", 
-                "2022-07-01 18:12:36", 
-                "2022-07-01 19:12:35", 
-                "*", 
-                "10"
-            ))
-            console.log(result.data)
-        } catch (exception) {
-            console.log(exception.response)
-        }
-    
     });
 });

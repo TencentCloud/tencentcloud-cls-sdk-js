@@ -44,16 +44,3 @@ export const INVALID_UIN: string = "InvalidUin";
 export const SDK_VERSION: string = "1.0.7";
 export const SDK_USER_AGENT: string = `cls-js-sdk-${SDK_VERSION}`;
 
-export const TOPIC_IDS: string = "topic_ids";
-export const LOGSET_ID: string = "logset_id";
-export const START_TIME: string = "start_time";
-export const END_TIME: string = "end_time";
-export const QUERY_STRING: string = "query_string";
-export const LIMIT: string = "limit";
-export const CONTEXT: string = "context";
-export const SORT: string = "sort";
-
-
-
-
-

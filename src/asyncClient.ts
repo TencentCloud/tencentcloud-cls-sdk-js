@@ -1,11 +1,10 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_JSON, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, SORT, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, TOPIC_IDS, START_TIME, END_TIME, LOGSET_ID, LIMIT, CONTEXT,  CONST_HTTP_METHOD_GET, QUERY_STRING, HEADER_AUTH_MODE, HEADER_UIN, AUTH_MODE_WEAK, INVALID_UIN, SDK_USER_AGENT } from './common/constants';
+import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, HEADER_AUTH_MODE, HEADER_UIN, AUTH_MODE_WEAK, INVALID_UIN, SDK_USER_AGENT, HTTP_SEND_TIME_OUT } from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import { signature } from "./common/sign";
 import * as axios from "axios"
 import { Response } from './response/response';
-import { SearchLogRequest } from './request/searchResquest';
 
 export class AsyncClient {
     /**
@@ -139,125 +138,58 @@ export class AsyncClient {
             throw new TencentCloudClsSDKException(`InvalidLogSize. logItems' size exceeds maximum limitation : ${CONST_MAX_PUT_SIZE} bytes, logBytes=${logBytes.length}, topic=${request.getTopic()}`);
         }
       
-        let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
-        request.setParam(TOPIC_ID, request.getTopic());
         let urlParameter = request.getAllParams();
+        request.setParam(TOPIC_ID, request.getTopic());
 
         for (let retryTimes = 0; retryTimes < this.retry_times; retryTimes++) { 
             try {
+                // 每次重试都重新构建 headParameter，避免上次残留的头污染签名
+                let headParameter = this.getCommonHeadPara(CONST_PROTO_BUF);
                 let res = await this.sendLogs(CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, urlParameter, headParameter, logBytes, request.getTopic());
-                let putLogRequest = new Response();
-                putLogRequest.setAllHeaders(res.headers);
-                putLogRequest.setHttpStatusCode(res.status);
-                if (putLogRequest.getHttpStatusCode()==200) {
-                    return putLogRequest;
+                let putLogResponse = new Response();
+                putLogResponse.setAllHeaders(res.headers);
+                putLogResponse.setHttpStatusCode(res.status);
+                if (putLogResponse.getHttpStatusCode() == 200) {
+                    return putLogResponse;
                 }
-                // 401 不重试（配置类错误，重试无意义）
-                if (putLogRequest.getHttpStatusCode() == 401) {
+                // 401/404 不重试（配置类错误，重试无意义）
+                if (putLogResponse.getHttpStatusCode() == 401 || putLogResponse.getHttpStatusCode() == 404) {
                     throw new TencentCloudClsSDKException(
-                        `send log failed with HTTP 401. topic=${request.getTopic()}`
+                        `send log failed with HTTP ${putLogResponse.getHttpStatusCode()}. topic=${request.getTopic()}`
                     );
                 }
-                if (retryTimes+1 >= this.retry_times) { 
+                if (retryTimes + 1 >= this.retry_times) { 
                     throw new TencentCloudClsSDKException("send log failed and exceed retry times");
                 }
             } catch (error) {
-                // 401/413 不重试
-                if (error.response && (error.response.status == 413 || error.response.status == 401)) {
-                    let putLogRequest = new Response();
-                    putLogRequest.setAllHeaders(error.response.headers);
-                    putLogRequest.setHttpStatusCode(error.response.status);
+                // SDK 自身抛出的异常直接透传，不再重试
+                if (error instanceof TencentCloudClsSDKException) {
+                    throw error;
+                }
+                // axios 错误：401/404/413 不重试
+                if (error.response && (error.response.status == 413 || error.response.status == 401 || error.response.status == 404)) {
+                    let putLogResponse = new Response();
+                    putLogResponse.setAllHeaders(error.response.headers);
+                    putLogResponse.setHttpStatusCode(error.response.status);
                     if (error.response.status == 401) {
                         throw new TencentCloudClsSDKException(
                             `send log failed with HTTP 401. topic=${request.getTopic()}. response: ${JSON.stringify(error.response.data)}`
                         );
                     }
-                    return putLogRequest;
+                    return putLogResponse;
                 }
-                if (retryTimes+1 >= this.retry_times) { 
-                    let putLogRequest = new Response();
+                if (retryTimes + 1 >= this.retry_times) { 
+                    let putLogResponse = new Response();
                     if (error.response) {
-                        putLogRequest.setAllHeaders(error.response.headers);
-                        putLogRequest.setHttpStatusCode(error.response.status);
+                        putLogResponse.setAllHeaders(error.response.headers);
+                        putLogResponse.setHttpStatusCode(error.response.status);
                     }
-                    throw new TencentCloudClsSDKException(`send log failed and exceed retry times. error: ${error.message}. request: ${JSON.stringify(putLogRequest)}`);
+                    throw new TencentCloudClsSDKException(`send log failed and exceed retry times. error: ${error.message}`);
                 }   
             }
         }        
     }
 
-
-    /**
-     * SearchLog
-     */    
-    public async SearchLog(request: SearchLogRequest): Promise<any> {
-        if (request.LogsetId == null || request.LogsetId == undefined || request.LogsetId.length == 0) {
-            throw new TencentCloudClsSDKException("logset_id can not be empty")
-        }
-
-        if (request.TopicId == null || request.TopicId == undefined || request.TopicId.length == 0) {
-            throw new TencentCloudClsSDKException("topic_id can not be empty")
-        }
-
-        if (request.StartTime == null || request.StartTime == undefined || request.StartTime.length == 0) {
-            throw new TencentCloudClsSDKException("start_time can not be empty")
-        }
-
-        if (request.EndTime == null || request.EndTime == undefined || request.EndTime.length == 0) {
-            throw new TencentCloudClsSDKException("end_time can not be empty")
-        }
-
-        if (request.Limit == null || request.Limit == undefined || request.Limit.length == 0 || parseInt(request.Limit, 10) > 100) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        if (request.Sort != "asc" && request.Sort != "desc" ) {
-            throw new TencentCloudClsSDKException("sort parameter is invalid")
-        }
-
-        // SearchLog 仅支持强鉴权
-        if (this.isWeakAuth()) {
-            throw new TencentCloudClsSDKException("SearchLog requires SecretID and SecretKey (weak auth is not supported for log consumption)")
-        }
-
-        let urlParameter = request.getAllParams();
-        urlParameter.set(TOPIC_IDS, request.TopicId);
-        urlParameter.set(LOGSET_ID, request.LogsetId);
-        urlParameter.set(START_TIME, request.StartTime);
-        urlParameter.set(END_TIME, request.EndTime);
-        urlParameter.set(LIMIT, request.Limit);
-        urlParameter.set(QUERY_STRING, request.QueryString)
-        if (request.Context != null && request.Context != undefined && request.Context.length > 0) {
-            urlParameter.set(CONTEXT, request.Context);
-        }
-        urlParameter.set(SORT, request.Sort);
-
-        let headParameter = this.getCommonHeadPara(CONST_JSON);
-        headParameter.delete(CONST_CONTENT_LENGTH)
-        let signature_str: string = signature(this.secretId, this.secretKey, CONST_HTTP_METHOD_GET, "/searchlog", new Map(), headParameter, 300000);
-        headParameter.set(CONST_AUTHORIZATION, signature_str);
-
-        let headers: {[key: string]: string} = {};
-        headParameter.forEach((value , key) =>{
-            headers[key] = value;
-        });
-        
-        if (this.secretToken.length > 0) {
-            headers["X-Cls-Token"] = this.secretToken;
-        }
-
-        let uri = ""
-        urlParameter.forEach((value , key) =>{
-            uri+= key+"="+encodeURIComponent(value)+"&";
-        });
-        uri = uri.substring(0, uri.length-1)
-    
-        return axios.default({
-            url: this.httpType+this.hostName+"/searchlog"+"?"+uri,
-            method: "get",
-            headers,
-        });
-    }
 
     /**
      * sendLogs
@@ -300,10 +232,11 @@ export class AsyncClient {
         headers["User-Agent"] = SDK_USER_AGENT;
 
         return axios.default({
-            url: this.httpType+this.hostName+resourceUri+"?"+TOPIC_ID+"="+topic,
+            url: this.httpType + this.hostName + resourceUri + "?" + TOPIC_ID + "=" + encodeURIComponent(topic),
             method: "post",
             data: body,
             headers,
+            timeout: HTTP_SEND_TIME_OUT,
         });
     }
 

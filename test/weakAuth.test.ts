@@ -368,32 +368,4 @@ describe('Weak Auth (免密) Feature Tests', () => {
         });
     });
 
-    // ============================================================
-    // SearchLog 弱鉴权限制测试
-    // ============================================================
-    describe('SearchLog weak auth restriction', () => {
-        it('弱鉴权下调用 SearchLog → 报错', async () => {
-            const client = new AsyncClient({
-                endpoint: "ap-guangzhou.cls.tencentcs.com",
-                sourceIp: "127.0.0.1",
-                retry_times: 2,
-                uin: "123456789",
-            });
-
-            try {
-                const { SearchLogRequest } = require('../src/request/searchResquest');
-                await client.SearchLog(new SearchLogRequest(
-                    "logset-id",
-                    "topic-id",
-                    "2022-07-01 18:12:36",
-                    "2022-07-01 19:12:35",
-                    "*",
-                    "10"
-                ));
-                expect.fail("should have thrown");
-            } catch (error) {
-                expect(error.message).to.include("weak auth is not supported");
-            }
-        });
-    });
 });
