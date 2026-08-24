@@ -26,6 +26,24 @@ export const CONST_MAX_PUT_SIZE: number = 1 * 1024 * 1024;
 export const CONST_X_SLS_COMPRESSTYPE: string = "x-cls-compress-type";
 export const CONST_LZ4: string = "lz4";
 
+/**
+ * 弱鉴权（免密）相关常量
+ */
+export const HEADER_AUTH_MODE: string = "x-cls-auth-mode";
+export const HEADER_UIN: string = "X-CLS-Uin";
+export const AUTH_MODE_WEAK: string = "weak";
+
+/**
+ * 错误码
+ */
+export const INVALID_UIN: string = "InvalidUin";
+
+/**
+ * SDK 版本号
+ */
+export const SDK_VERSION: string = "1.0.7";
+export const SDK_USER_AGENT: string = `cls-js-sdk-${SDK_VERSION}`;
+
 export const TOPIC_IDS: string = "topic_ids";
 export const LOGSET_ID: string = "logset_id";
 export const START_TIME: string = "start_time";
