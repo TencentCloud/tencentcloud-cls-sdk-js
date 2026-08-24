@@ -1,9 +1,10 @@
 import { AsyncClientOptions } from './models';
 import  TencentCloudClsSDKException from './exception'
-import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, HEADER_AUTH_MODE, HEADER_UIN, AUTH_MODE_WEAK, INVALID_UIN, SDK_USER_AGENT, HTTP_SEND_TIME_OUT } from './common/constants';
+import { CONST_CONTENT_LENGTH, CONST_CONTENT_TYPE, CONST_HOST, CONST_PROTO_BUF, CONST_MAX_PUT_SIZE, TOPIC_ID, CONST_HTTP_METHOD_POST, UPLOAD_LOG_RESOURCE_URI, CONST_AUTHORIZATION, HEADER_AUTH_MODE, HEADER_UIN, AUTH_MODE_WEAK, INVALID_UIN, SDK_USER_AGENT, HTTP_SEND_TIME_OUT, CONST_GZIP_ENCODING, CONST_X_SLS_COMPRESSTYPE } from './common/constants';
 import { PutLogsRequest } from './request/putLogsRequest';
 import { signature } from "./common/sign";
 import * as axios from "axios"
+import * as zlib from "zlib"
 import { Response } from './response/response';
 
 export class AsyncClient {
@@ -201,7 +202,10 @@ export class AsyncClient {
      * @returns 
      */
     private async sendLogs(method: string, resourceUri: string, urlParameter: Map<string, string>, headParameter: Map<string, string>, body: Uint8Array, topic: string): Promise<any> {
-        headParameter.set(CONST_CONTENT_LENGTH, body.length.toString());
+        // deflate 压缩
+        let compressedBody: Buffer = zlib.deflateRawSync(Buffer.from(body));
+
+        headParameter.set(CONST_CONTENT_LENGTH, compressedBody.length.toString());
 
         let headers: {[key: string]: string} = {};
 
@@ -230,11 +234,13 @@ export class AsyncClient {
 
         // User-Agent
         headers["User-Agent"] = SDK_USER_AGENT;
+        // 压缩类型
+        headers[CONST_X_SLS_COMPRESSTYPE] = CONST_GZIP_ENCODING;
 
         return axios.default({
             url: this.httpType + this.hostName + resourceUri + "?" + TOPIC_ID + "=" + encodeURIComponent(topic),
             method: "post",
-            data: body,
+            data: compressedBody,
             headers,
             timeout: HTTP_SEND_TIME_OUT,
         });
