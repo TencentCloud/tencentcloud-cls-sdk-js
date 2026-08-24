@@ -1,4 +1,5 @@
 import * as $protobuf from "protobufjs";
+type Long = number;
 /** Namespace cls. */
 export namespace cls {
 
