@@ -1,52 +1,49 @@
-## CLS JavaScript SDK
+# CLS JavaScript SDK
 
-腾讯云CLS日志上传SDK, 支持nodejs
+[English](./README_EN.md) | 简体中文
 
-## 安装指令
-```
+腾讯云 CLS 日志上传 SDK，支持 Node.js。
+
+## 安装
+
+```bash
 npm i tencentcloud-cls-sdk-js
 ```
 
 ## 参数描述
 
-| 参数名 | 类型     | 必填 | Description                                                  |
-| ------------- | --------------- | -------- | ------------------------------------------------------------ |
-| secretId    | string          | 否（与 uin 二选一） | 访问密钥ID，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
-| secretKey  | string          | 否（与 uin 二选一）    | 访问密钥KEY，密钥信息获取请前往[密钥获取](https://console.cloud.tencent.com/cam/capi)。并请确保密钥关联的账号具有相应的[SDK上传日志权限](https://cloud.tencent.com/document/product/614/68374#.E4.BD.BF.E7.94.A8-api-.E4.B8.8A.E4.BC.A0.E6.95.B0.E6.8D.AE) |
-| uin         | string          | 否（与 secretId/secretKey 二选一） | 弱鉴权（免密）账号 Uin，纯数字字符串。详见下方「弱鉴权（免密）上报」章节 |
-| endpoint      | string          | 是  | 访问目标日志主题所在地域的域名, e.g. ap-guangzhou.cls.tencentcs.com，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
-| sourceIp      | string          | 否   | 源IP地址              |
-| retry_times      | integer          | 是    | 重试次数                                      |
-| topic_id      | string          | 是    | 目标CLS日志服务日志主题ID                                  |
+| 参数名 | 类型 | 必填 | 描述 |
+|--------|------|------|------|
+| endpoint | string | 是 | 目标日志主题所在地域的域名，如 `ap-guangzhou.cls.tencentcs.com`，详情请参见[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D) |
+| secretId | string | 否（与 uin 二选一） | 访问密钥 ID，[前往获取](https://console.cloud.tencent.com/cam/capi) |
+| secretKey | string | 否（与 uin 二选一） | 访问密钥 KEY，[前往获取](https://console.cloud.tencent.com/cam/capi) |
+| uin | string | 否（与 secretId/secretKey 二选一） | 弱鉴权（免密）账号 Uin，纯数字字符串。详见「弱鉴权（免密）上报」章节 |
+| sourceIp | string | 是 | 源 IP 地址 |
+| retry_times | number | 是 | 重试次数 |
+| secretToken | string | 否 | 临时密钥 Token |
+| user_agent | string | 否 | 自定义 User-Agent，追加到默认 UA 之后 |
 
-### 注意： 
+### 注意
 
-endpoint填写请参考[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D)中 **API上传日志** Tab中的域名![image-20230403191435319](https://github.com/TencentCloud/tencentcloud-cls-sdk-js/blob/main/demo.png)
-
+endpoint 填写请参考[可用地域](https://cloud.tencent.com/document/product/614/18940#.E5.9F.9F.E5.90.8D)中 **API上传日志** Tab 中的域名。
 
 ## 请求样例（强鉴权 AK/SK）
 
 ```typescript
 import { AsyncClient, LogItem, Content, LogGroup, PutLogsRequest } from 'tencentcloud-cls-sdk-js';
 
-// CLS日志服务日志主题ID； 必填参数
-let topicID = "xxxx"
+let topicID = "your-topic-id"
 
 let client = new AsyncClient({
-    // 目标日志主题所在地域域名； 必填参数
     endpoint: "ap-guangzhou.cls.tencentcs.com",
-    // 访问密钥ID； 必填参数
-    secretId: "[secretId]", 
-    // 访问密钥KEY； 必填参数
+    secretId: "[secretId]",
     secretKey: "[secretKey]",
-    // 源IP地址： 选填参数， 为空则自动填充本机IP
     sourceIp: "127.0.0.1",
-    // 重试次数： 必填参数
     retry_times: 10,
 });
 
 let item = new LogItem()
-item.pushBack(new Content("__CONTENT__", "你好，我来自深圳|hello world2"))
+item.pushBack(new Content("__CONTENT__", "hello world"))
 item.setTime(Math.floor(Date.now()/1000))
 
 let loggroup = new LogGroup()
@@ -108,19 +105,19 @@ SDK 通过凭证填写情况**隐式推断**鉴权模式，无需额外开关：
 
 - `uin` 必须为**纯数字字符串**，不允许包含字母、负号、空格等。
 - `ResetSecretToken()` 在弱鉴权模式下调用会打印 warn 日志并被忽略，不会改变鉴权模式。
-- 弱鉴权**仅适用于日志上传**（`PutLogs`），`SearchLog` 等读接口仍需 secretId/secretKey。
+- 弱鉴权**仅适用于日志上传**（`PutLogs`）。
 
 ### 安全提示
 
 > **弱鉴权等同匿名写入**，不校验身份真实性。任何知道 `uin` + `topic_id` 的人都能向该主题写入日志。
-> 
+>
 > - 请求可被伪造、可被重放。
 > - 建议仅在可信内网环境使用。
 > - 敏感业务请使用云 API 密钥（secretId/secretKey）进行强鉴权。
 
 ### 范围限制
 
-弱鉴权仅用于日志上传接口 `/structuredlog`，日志消费（SearchLog 等）仍需 AK/SK。
+弱鉴权仅用于日志上传接口 `/structuredlog`。
 
 ---
 
@@ -128,5 +125,6 @@ SDK 通过凭证填写情况**隐式推断**鉴权模式，无需额外开关：
 
 - 支持 deflate 压缩上传（默认开启，减少网络传输体积）
 - 支持弱鉴权（免密）上报
+- 支持自定义 User-Agent
 - 请求超时保护（默认 60s）
 - 401/404/413 等配置类错误不重试
