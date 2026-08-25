@@ -12,4 +12,9 @@ export interface AsyncClientOptions {
      * 必须为纯数字字符串。
      */
     uin?: string;
+    /**
+     * 自定义 User-Agent，若不填则使用默认值 cls-js-sdk-<version>。
+     * 若填写，将追加到默认 UA 之后，格式为 "cls-js-sdk-<version> <custom>"。
+     */
+    user_agent?: string;
 }

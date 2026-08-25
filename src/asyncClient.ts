@@ -41,6 +41,11 @@ export class AsyncClient {
      */
     private uin: string;
 
+    /**
+     * User-Agent 字符串
+     */
+    private userAgent: string;
+
 
     constructor(options: AsyncClientOptions) { 
         // 参数校验
@@ -97,6 +102,13 @@ export class AsyncClient {
         }
 
         this.sourceIp = options.sourceIp;
+
+        // User-Agent：默认 + 用户自定义追加
+        if (options.user_agent && options.user_agent.length > 0) {
+            this.userAgent = `${SDK_USER_AGENT} ${options.user_agent}`;
+        } else {
+            this.userAgent = SDK_USER_AGENT;
+        }
     }
 
     /**
@@ -233,7 +245,7 @@ export class AsyncClient {
         }
 
         // User-Agent
-        headers["User-Agent"] = SDK_USER_AGENT;
+        headers["User-Agent"] = this.userAgent;
         // 压缩类型
         headers[CONST_X_SLS_COMPRESSTYPE] = CONST_GZIP_ENCODING;
 

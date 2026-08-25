@@ -41,6 +41,6 @@ export const INVALID_UIN: string = "InvalidUin";
 /**
  * SDK 版本号
  */
-export const SDK_VERSION: string = "1.0.7";
+export const SDK_VERSION: string = "1.1.0";
 export const SDK_USER_AGENT: string = `cls-js-sdk-${SDK_VERSION}`;
 
