@@ -22,7 +22,7 @@ export const HTTP_CONNECT_TIME_OUT: number = 60 * 1000;
 export const HTTP_SEND_TIME_OUT: number = 60 * 1000;
 export const TOPIC_ID: string = "topic_id";
 export const UPLOAD_LOG_RESOURCE_URI: string = "/structuredlog";
-export const CONST_MAX_PUT_SIZE: number = 1 * 1024 * 1024;
+export const CONST_MAX_PUT_SIZE: number = 19 * 1024 * 1024;
 export const CONST_X_SLS_COMPRESSTYPE: string = "x-cls-compress-type";
 export const CONST_LZ4: string = "lz4";
 
@@ -41,6 +41,6 @@ export const INVALID_UIN: string = "InvalidUin";
 /**
  * SDK 版本号
  */
-export const SDK_VERSION: string = "1.1.0";
+export const SDK_VERSION: string = "1.1.1";
 export const SDK_USER_AGENT: string = `cls-js-sdk-${SDK_VERSION}`;
 
